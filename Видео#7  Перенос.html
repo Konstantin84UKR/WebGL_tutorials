@@ -54,15 +54,15 @@
     function initShaders(gl){
   
         var VS = getShader(gl,'vs',VSHADER_SOURCE);   
-	    var FS = getShader(gl,'fs',FSHADER_SOURCE);
+	var FS = getShader(gl,'fs',FSHADER_SOURCE);
 		 
-		shaderProgram = gl.createProgram(); 
+	shaderProgram = gl.createProgram(); 
         gl.attachShader(shaderProgram,VS);
         gl.attachShader(shaderProgram,FS);	
         gl.linkProgram(shaderProgram);
   
 		
-		gl.useProgram(shaderProgram);
+	gl.useProgram(shaderProgram);
 			
     }
 	  
@@ -98,9 +98,9 @@
     
 		
         var a_Position  = gl.getAttribLocation(shaderProgram,'a_Position');
-		var a_Color = gl.getAttribLocation(shaderProgram,'a_Color');
+	var a_Color = gl.getAttribLocation(shaderProgram,'a_Color');
 
-		gl.enableVertexAttribArray(a_Position);
+	gl.enableVertexAttribArray(a_Position);
         gl.enableVertexAttribArray(a_Color);
 
         var triangle_vertex =
