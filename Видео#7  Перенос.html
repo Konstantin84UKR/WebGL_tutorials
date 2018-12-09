@@ -8,13 +8,13 @@
   var gl;
   var VSHADER_SOURCE = 
     'attribute vec2 a_Position;\n'+
-	'attribute vec3 a_Color;\n'+
-	'uniform mat4 u_Pmatrix;\n'+
+    'attribute vec3 a_Color;\n'+
+    'uniform mat4 u_Pmatrix;\n'+
     'uniform mat4 u_Mmatrix;\n'+
     'uniform mat4 u_Vmatrix;\n'+
     'varying vec3 v_Color;\n'+
-	'void main() {\n' + 
-	' v_Color = a_Color;\n'+
+    'void main() {\n' + 
+    ' v_Color = a_Color;\n'+
     ' gl_Position = u_Pmatrix*u_Vmatrix*u_Mmatrix*vec4(a_Position,0.0,1.0);\n'+
     ' }\n';
 	
@@ -89,7 +89,7 @@
 	
 	  initShaders(gl);
 	  
-	    // --------------------------------------------------------------
+// --------------------------------------------------------------
 	    
 		
         var u_Pmatrix = gl.getUniformLocation(shaderProgram,'u_Pmatrix');
@@ -126,28 +126,28 @@
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,TRIANGLE_FACES);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(triangle_face),gl.STATIC_DRAW);
 		
-        // --------------------------------------------------------------		
-		var PROJMATRIX = mat4.perspective(40,canvas.width/canvas.height,1,100);
+ // --------------------------------------------------------------		
+	var PROJMATRIX = mat4.perspective(40,canvas.width/canvas.height,1,100);
         var VIEWMATRIX = mat4.create();
-		var MODELMATRIX = mat4.create();
+	var MODELMATRIX = mat4.create();
           
         mat4.identity(MODELMATRIX);
         mat4.identity(VIEWMATRIX);
-        // --------------------------------------------------------------		
+// --------------------------------------------------------------		
         mat4.translate(VIEWMATRIX, [0.0, 0.0, -10.0]);
         mat4.translate(MODELMATRIX,[0.0, 0.0, 5.0]); //x y z 
-		mat4.scale(MODELMATRIX,[0.5, 1.0, 1.0]); //x y z 
+	mat4.scale(MODELMATRIX,[0.5, 1.0, 1.0]); //x y z 
        				
-	    gl.clearColor(0.5,0.5,0.5,1.0);
-	    gl.clear(gl.COLOR_BUFFER_BIT);
+	gl.clearColor(0.5,0.5,0.5,1.0);
+	gl.clear(gl.COLOR_BUFFER_BIT);
 	
-	    gl.bindBuffer(gl.ARRAY_BUFFER,TRIANGLE_VERTEX);
+	gl.bindBuffer(gl.ARRAY_BUFFER,TRIANGLE_VERTEX);
 		
-		gl.uniformMatrix4fv(u_Pmatrix, false, PROJMATRIX);
+	gl.uniformMatrix4fv(u_Pmatrix, false, PROJMATRIX);
         gl.uniformMatrix4fv(u_Mmatrix, false, MODELMATRIX);
         gl.uniformMatrix4fv(u_Vmatrix, false, VIEWMATRIX);
 
-	    gl.vertexAttribPointer(a_Position,2,gl.FLOAT,false,4*(2+3),0);
+	gl.vertexAttribPointer(a_Position,2,gl.FLOAT,false,4*(2+3),0);
         gl.vertexAttribPointer(a_Color,3,gl.FLOAT,false,4*(2+3),2*4);
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, TRIANGLE_FACES);
