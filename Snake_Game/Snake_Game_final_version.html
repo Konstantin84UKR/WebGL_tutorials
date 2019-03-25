@@ -1,0 +1,217 @@
+<html>
+<head>
+<title> WebGL </title>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+ <script type="text/javascript" src="glMatrix-0.9.5.js"></script>
+ <script type="text/javascript" src="controller.js"></script>
+ <script type="text/javascript" src="Grid_builder.js"></script>
+ <script type="text/javascript" src="ShaderUtils.js"></script>
+ <script type="text/javascript" src="Shake_builder.js"></script>
+
+
+ <script id = "vertex_shader" type="x-shader/x-vertex">
+
+        attribute vec3 a_Position;
+
+        uniform mat4 u_Pmatrix;
+        uniform mat4 u_Mmatrix;
+        uniform mat4 u_Vmatrix;
+        uniform vec3 u_Color;
+
+        varying vec3 v_Color;
+
+        void main() {
+
+        v_Color = u_Color;
+        gl_Position = u_Pmatrix*u_Vmatrix*u_Mmatrix*vec4(a_Position,1.0);
+
+        }
+
+      </script>
+ <script id = "fragment_shader" type="x-shader/x-fragment">
+
+        precision mediump float;
+
+        uniform vec4 u_FragColor;
+        varying vec3 v_Color;
+
+        void main() {
+
+        gl_FragColor = vec4(v_Color,1.0);
+
+        }
+
+      </script>
+ <script type="text/javascript">
+
+  var gl;
+  var canvas;
+  var goRun = 8;
+  var snakeBody = [0,0];
+  var snake = [];
+  snake.push(snakeBody);
+  var apple ={
+    positionX: 0.0,
+    positionY: 0.0
+  }
+
+    function initGl() {
+
+        canvas = document.getElementById("canvasGL");
+        if (!canvas){
+            console.log('failed');
+            return;
+        }
+        canvas.width  = 500;
+        canvas.height = 500;
+
+        try {
+
+            gl = canvas.getContext("webgl", {antialias: false});
+
+        } catch (e) {
+            alert("You are not webgl compatible :(");
+            return false;
+        }
+
+	    return gl;
+    }
+
+    function webGLStart() {
+
+      //----------------------------- INIT ----------------------------------------------------------------------------//
+        var gl;
+        gl = initGl();
+      // --------------------------- EVENT ----------------------------------------------------------------------------//
+       setEvent();
+      // -------------------------- SHADER ----------------------------------------------------------------------------//
+      let shaderProgram  = createDomShaderProgram(gl,"vertex_shader","fragment_shader");
+
+      let cubeShaderData = createGameDataBuffer(gl,shaderProgram);
+
+	  // ---------------------- Build Game Grid -----------------------------------------------------------------------//
+
+        let grid = gridBuild();
+        bufferUpdate(gl,grid);
+        matrixUpdate(gl);
+
+        //------------------------- RENDER ----------------------------------------------------------------------------//
+
+        gl.enable(gl.DEPTH_TEST);
+        gl.depthFunc(gl.LEQUAL);
+        gl.clearDepth(1.0);
+
+        let old_time = 0;
+        let speed = 200;
+        let dt = 0;
+        let snakePosition = {
+            x:0.0,
+            y:0.0
+        };
+
+
+        function render(gl){
+
+            gl.clearColor(0.5,0.5,0.5,1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+
+            gl.uniformMatrix4fv(cubeShaderData.u_Pmatrix, false, gl.PROJMATRIX);
+            gl.uniformMatrix4fv(cubeShaderData.u_Vmatrix, false, gl.VIEWMATRIX);
+
+            // ------------------------ SNAKE -------------------------------------------------------------------------//
+            for(let i=0;i<snake.length; i+=1) {
+
+                if(i==0){
+                       gl.uniform3f(cubeShaderData.u_Color, 1.0,1.0,0.0);
+                }else {gl.uniform3f(cubeShaderData.u_Color, 0.0,0.0,1.0);};
+
+
+                mat4.identity(gl.MODELMATRIX_SNAKE);
+                mat4.translate(gl.MODELMATRIX_SNAKE, [snake[i][0] * 2, snake[i][1] * 2, 0.0]);
+
+                gl.uniformMatrix4fv(cubeShaderData.u_Mmatrix, false, gl.MODELMATRIX_SNAKE);
+                gl.bindBuffer(gl.ARRAY_BUFFER, cubeShaderData.TRIANGLE_VERTEX);
+
+                gl.vertexAttribPointer(cubeShaderData.a_Position, 3, gl.FLOAT, false, 4 * (3 + 3), 0);
+
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeShaderData.TRIANGLE_FACES);
+                gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0);
+                gl.uniform3f(cubeShaderData.u_Color, 0.9, 0.5, 0.0);
+                gl.drawElements(gl.LINES, 36, gl.UNSIGNED_SHORT, 0);
+            }
+
+            // ----------------------- APPLE  -------------------------------------------------------------------------//
+            apple = EatApple(gl,snake,apple);
+            if(apple.Eat){
+                if(snake.length < 10){snake.push([apple.positionX,apple.positionY]);};
+            };
+
+            gl.uniform3f(cubeShaderData.u_Color, 0.8,0.0,0.0);
+            mat4.identity(gl.MODELMATRIX_SNAKE);
+            mat4.translate(gl.MODELMATRIX_SNAKE, [apple.positionX * 2, apple.positionY * 2, 0.0]);
+
+            gl.uniformMatrix4fv(cubeShaderData.u_Mmatrix, false, gl.MODELMATRIX_SNAKE);
+            gl.bindBuffer(gl.ARRAY_BUFFER, cubeShaderData.TRIANGLE_VERTEX);
+
+            gl.vertexAttribPointer(cubeShaderData.a_Position, 3, gl.FLOAT, false, 4 * (3 + 3), 0);
+
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeShaderData.TRIANGLE_FACES);
+            gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0);
+            gl.uniform3f(cubeShaderData.u_Color, 0.9, 0.5, 0.0);
+            gl.drawElements(gl.LINES, 36, gl.UNSIGNED_SHORT, 0);
+
+
+            // ------------------------ GRID --------------------------------------------------------------------------//
+            gl.uniformMatrix4fv(cubeShaderData.u_Mmatrix, false, gl.MODELMATRIX_GRID);
+            gl.bindBuffer(gl.ARRAY_BUFFER,gl.GRID_VERTEX);
+            gl.vertexAttribPointer(cubeShaderData.a_Position,3,gl.FLOAT,false,4*(3),0);
+
+            gl.uniform3f(cubeShaderData.u_Color, 0.0,1.0,0.0);
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.GRID_FACES);
+            gl.drawElements(gl.LINES,gl.grid.grid_count, gl.UNSIGNED_SHORT, 0);
+
+            gl.flush();
+
+        }
+
+        const animate = function (time) {
+
+            dt = time - old_time;
+
+            if (Math.abs(dt) >= speed){
+
+                swapSnake(snake);
+                snakePosition = snakeContriller(gl,snakePosition,goRun);
+
+                snake[0][0]= snakePosition.x;
+                snake[0][1]= snakePosition.y;
+
+                old_time = time;
+            }
+
+            render(gl);
+
+            window.requestAnimationFrame(animate);
+        }
+
+        animate(0);
+
+    }
+
+</script>
+</head>
+
+<body onload="webGLStart();">
+   
+    <canvas id="canvasGL" style="border: solid;" width="400" height="400"></canvas>
+    <br/><br />
+    <h2>Size of the playing field:</h2>
+
+    <td>X: <input type="number" id="Grid_X" value="10" min="3" max="30">/>
+    <td>Y: <input type="number" id="Grid_Y" value="10" min="3" max="30">/>
+        <br/><br />
+    <input type="button" id="update" name="Update" value="Update" />
+
+</body>
+</html>
