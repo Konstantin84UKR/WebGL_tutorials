@@ -1,0 +1,331 @@
+<html>
+<head>
+    <title> WebGL </title>
+    <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+    <script type="text/javascript" src="gl-matrix.js"></script>
+    <script id = "vertex_shader" type="x-shader/x-vertex">
+
+        attribute vec3 a_Position;
+        attribute vec2 a_uv;
+
+        uniform mat4 u_Pmatrix;
+        uniform mat4 u_Mmatrix;
+        uniform mat4 u_Vmatrix;
+
+        varying vec2 v_uv;
+
+        void main() {
+
+        v_uv = a_uv;
+        gl_Position = u_Pmatrix*u_Vmatrix*u_Mmatrix*vec4(a_Position,1.0);
+
+        }
+
+      </script>
+    <script id = "fragment_shader" type="x-shader/x-fragment">
+
+        precision mediump float;
+
+        uniform vec4 u_FragColor;
+        uniform sampler2D sampler;
+
+        varying vec2 v_uv;
+
+        void main() {
+
+        gl_FragColor =  texture2D(sampler,v_uv);
+
+        }
+
+      </script>
+
+    <script type="text/javascript">
+
+        var gl;
+        var canvas;
+
+        function getShader(gl, id, str){
+
+            var shader;
+            if(id == 'vs'){
+                shader = gl.createShader(gl.VERTEX_SHADER);
+
+            }else if(id=='fs'){
+                shader = gl.createShader(gl.FRAGMENT_SHADER);
+            }else {
+                return null;
+            }
+            gl.shaderSource(shader, str);
+            gl.compileShader(shader);
+
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                alert(gl.getShaderInfoLog(shader));
+                return null;
+            }
+
+            return shader;
+
+        }
+
+        function getProgram(gl,vShader,fShader) {
+
+            var shaderProgram = gl.createProgram();
+            gl.attachShader(shaderProgram,vShader);
+            gl.attachShader(shaderProgram,fShader);
+            gl.linkProgram(shaderProgram);
+            gl.useProgram(shaderProgram);
+
+            return shaderProgram;
+
+        }
+
+        function createDomShaderProgram(gl, vectId,fragId) {
+
+            var vShaderTxt = document.getElementById(vectId).text;                      if(!vShaderTxt) return null;
+            var fShaderTxt = document.getElementById(fragId).text;                      if(!fShaderTxt) return null;
+            var vShader = getShader(gl,'vs',vShaderTxt);                                if(!vShader)    return null;
+            var fShader = getShader(gl,'fs',fShaderTxt);                                if(!fShader)    return null;
+
+            if(!fShader) {gl.deleteShader(vShader);  return null;}
+
+            var shaderProgram = getProgram(gl,vShader,fShader);
+
+            return shaderProgram;
+        }
+
+        function initGl() {
+
+            canvas = document.getElementById("canvasGL");
+            if (!canvas){
+                console.log('failed');
+                return;
+            }
+            canvas.width  = 300;
+            canvas.height = 300;
+
+            try {
+
+                gl = canvas.getContext("webgl", {antialias: false});
+
+            } catch (e) {
+                alert("You are not webgl compatible :(");
+                return false;
+            }
+
+            return gl;
+        }
+
+        function webGLStart() {
+
+            // var gl;
+            //gl = initGl();
+
+            var canvas = document.getElementById("canvasGL");
+            if (!canvas){
+                console.log('failed');
+                return;
+            }
+            canvas.width  = 500;
+            canvas.height = 500;
+
+            var gl;
+            try {
+
+                gl = canvas.getContext("webgl", {antialias: true});
+
+            } catch (e) {
+                alert("You are not webgl compatible :(");
+                return false;
+            }
+
+
+            var shaderProgram  = createDomShaderProgram(gl,"vertex_shader","fragment_shader");
+
+            // --------------------------------------------------------------
+
+            var u_Pmatrix = gl.getUniformLocation(shaderProgram,'u_Pmatrix');
+            var u_Mmatrix = gl.getUniformLocation(shaderProgram,'u_Mmatrix');
+            var u_Vmatrix = gl.getUniformLocation(shaderProgram,'u_Vmatrix');
+
+            var a_Position  = gl.getAttribLocation(shaderProgram,'a_Position');
+            var a_uv        = gl.getAttribLocation(shaderProgram,'a_uv');
+            var u_sampler   = gl.getUniformLocation(shaderProgram,'sampler');
+
+            gl.uniform1i(u_sampler, 0);
+
+            gl.enableVertexAttribArray(a_Position);
+            gl.enableVertexAttribArray(a_uv);
+
+
+            var triangle_vertex =
+                [
+                    -1,-1,-1,    0.0,0.0,
+                    1,-1,-1,     1.0,0.0,
+                    1, 1,-1,     1.0,1.0,
+                    -1, 1,-1,    0.0,1.0,
+
+                    -1,-1, 1,    -0.5,-0.5,
+                    1,-1, 1,     1.5,-0.5,
+                    1, 1, 1,     1.5,1.5,
+                    -1, 1, 1,    -0.5,1.5,
+
+                    -1,-1,-1,    0,0,
+                    -1, 1,-1,    1,0,
+                    -1, 1, 1,    1,1,
+                    -1,-1, 1,    0,1,
+
+                    1,-1,-1,     0,0,
+                    1, 1,-1,     1,0,
+                    1, 1, 1,     1,1,
+                    1,-1, 1,     0,1,
+
+                    -1,-1,-1,    0,0,
+                    -1,-1, 1,    1,0,
+                    1,-1, 1,     1,1,
+                    1,-1,-1,     0,1,
+
+                    -1, 1,-1,    0,0,
+                    -1, 1, 1,    1,0,
+                    1, 1, 1,     1,1,
+                    1, 1,-1,     0,1
+
+                ];
+
+            var TRIANGLE_VERTEX = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER,TRIANGLE_VERTEX);
+            gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(triangle_vertex),gl.STATIC_DRAW);
+
+            var triangle_face = [
+
+               0,1,2,
+               0,2,3,
+
+               4,5,6,
+               4,6,7,
+
+               8,9,10,
+               8,10,11,
+
+               12,13,14,
+               12,14,15,
+
+               16,17,18,
+               16,18,19,
+
+               20,21,22,
+               20,22,23,
+
+            ];
+
+            var TRIANGLE_FACES = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,TRIANGLE_FACES);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(triangle_face),gl.STATIC_DRAW);
+
+            // --- create TEXTURE -------------
+            var get_texture =  function(image_URL){
+
+                var image = new Image();
+                image.src = image_URL;
+                image.webGLtexture = false;
+
+                image.onload = function (e) {
+
+                    var texture = gl.createTexture();
+                    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
+                    gl.bindTexture(gl.TEXTURE_2D,texture);
+                    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,image);
+                    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
+
+                    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+                    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+
+
+                    gl.generateMipmap(gl.TEXTURE_2D);
+                    gl.bindTexture(gl.TEXTURE_2D,null);
+
+                    image.webGLtexture = texture;
+
+                };
+
+                return image;
+
+            }
+
+             var tex =  get_texture("yachik.jpg");
+            //--- create MATRIX ---------------
+
+            var PROJMATRIX = glMatrix.mat4.create();
+            PROJMATRIX  = glMatrix.mat4.identity(PROJMATRIX);
+            var fovy =  40 * Math.PI / 180;
+            PROJMATRIX  = glMatrix.mat4.perspective(PROJMATRIX,fovy,canvas.width/canvas.height,1,100);
+
+            var MODELMATRIX = glMatrix.mat4.create();
+            var VIEWMATRIX  = glMatrix.mat4.create();
+
+            MODELMATRIX = glMatrix.mat4.identity(MODELMATRIX);
+            VIEWMATRIX  = glMatrix.mat4.identity(VIEWMATRIX);
+           // MODELMATRIX = glMatrix.mat4.rotateX(MODELMATRIX,MODELMATRIX,0);
+            VIEWMATRIX  = glMatrix.mat4.lookAt(VIEWMATRIX,[0.0, 0.0, 10.0],[0.0, 0.0, 0.0],[0.0, 1.0, 0.0]);
+
+            //-- RENDER -------------
+
+            gl.enable(gl.DEPTH_TEST);
+            gl.depthFunc(gl.LEQUAL);
+            gl.clearDepth(1.0);
+
+            var old_time = 0;
+
+            var animate = function (time) {
+
+                var dt=time-old_time;
+
+                MODELMATRIX = glMatrix.mat4.rotateX(MODELMATRIX,MODELMATRIX,0.0005*dt);
+                MODELMATRIX = glMatrix.mat4.rotateZ(MODELMATRIX,MODELMATRIX,0.0003*dt);
+                MODELMATRIX = glMatrix.mat4.rotateY(MODELMATRIX,MODELMATRIX,0.0007*dt);
+
+                old_time = time;
+
+                gl.clearColor(0.5,0.5,0.5,1.0);
+                gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+
+                gl.uniformMatrix4fv(u_Pmatrix, false, PROJMATRIX);
+                gl.uniformMatrix4fv(u_Mmatrix, false, MODELMATRIX);
+                gl.uniformMatrix4fv(u_Vmatrix, false, VIEWMATRIX);
+
+                if (tex.webGLtexture){
+                    gl.activeTexture(gl.TEXTURE0);
+                    gl.bindTexture(gl.TEXTURE_2D,tex.webGLtexture);
+                }
+
+
+                gl.bindBuffer(gl.ARRAY_BUFFER,TRIANGLE_VERTEX);
+
+                gl.vertexAttribPointer(a_Position,3,gl.FLOAT,false,4*(3+2),0);
+                gl.vertexAttribPointer(a_uv,2,gl.FLOAT,false,4*(3+2),3*4);
+
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, TRIANGLE_FACES);
+                gl.drawElements(gl.TRIANGLES,triangle_face.length, gl.UNSIGNED_SHORT, 0);
+
+                gl.flush();
+
+                window.requestAnimationFrame(animate);
+            }
+            animate(0);
+
+        }
+
+
+    </script>
+</head>
+
+<body onload="webGLStart();">
+
+<canvas id="canvasGL" style="border: solid;" width="400" height="400"></canvas>
+<br/><br />
+
+
+
+</body>
+</html>
