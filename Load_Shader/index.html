@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="script.js"></script>
+    <script id="vertex_shader" type="x-shader/x-vertex">
+
+        attribute vec2 a_Position;
+        attribute vec3 a_Color;
+        varying vec3 v_Color;
+        void main() {
+        v_Color = a_Color;
+        gl_Position = vec4(a_Position,0.0,1.0);
+        }
+
+    </script>
+    <script id="fragment_shader" type="x-shader/x-fragment">
+
+        precision mediump float;
+        uniform vec4 u_FragColor;
+        varying vec3 v_Color;
+        void main() {
+        gl_FragColor = vec4(0.9,0.5,0.0,1.0);
+        }
+
+    </script>
+</head>
+
+<body onload="main();">
+    <div>
+        <canvas id="canvas"></canvas>
+    </div>
+    <div>
+        <input type="radio" id="string_shader" name="shader" value="string_shader">
+        <label>string_shader</label>
+        <br>
+        <input type="radio" id="script_shader" name="shader" value="script_shader" checked="">
+        <label>script_shader</label>
+        <br>
+        <input type="radio" id="script_shader" name="shader" value="XMLHttpRequest_shader">
+        <label>XMLHttpRequest_shader</label>
+        <br>
+        <input type="radio" id="script_shader" name="shader" value="fetch_shader">
+        <label>fetch_shader</label>
+        <br>
+        <input type="radio" id="script_shader" name="shader" value="Promise_shader">
+        <label>Promise_shader</label>
+    </div>
+</body>
+
+</html>
