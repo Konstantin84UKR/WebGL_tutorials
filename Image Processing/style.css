@@ -1,0 +1,12 @@
+div {
+    float: right; /*Задаем обтекание*/
+    line-height: 50px;/*Высота строки +  верт. центрирования текста*/
+    font-size: 25px;
+    background: gray;
+    color: white;
+    margin-top: 0px;
+    width: 250px; /*Фиксируем ширину блока*/
+    height:500px; /*Фиксируем ширину блока*/
+    margin-right: 100px;
+    text-align: center; /*Центрируем текст по горизонтали*/
+   }

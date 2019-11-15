@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="script.js"></script>
+    <script type="text/javascript" src="js/gl-matrix.js"></script>
+    <script type="text/javascript" src="js/ShaderUtil.js"></script>
+    <script type="text/javascript" src="js/ModelUtil.js"></script>
+    <script id="vertex_shader" type="x-shader/x-vertex">
+
+        attribute vec2 a_Position;
+        attribute vec3 a_Color;
+        varying vec3 v_Color;
+        void main() {
+        v_Color = a_Color;
+        gl_Position = vec4(a_Position,0.0,1.0);
+        }
+
+    </script>
+    <script id="fragment_shader" type="x-shader/x-fragment">
+
+        precision mediump float;
+        uniform vec4 u_FragColor;
+        varying vec3 v_Color;
+        void main() {
+        gl_FragColor = vec4(0.9,0.5,0.0,1.0);
+        }
+
+    </script>
+    <!-- <link href="style.css" rel="stylesheet"> -->
+</head>
+
+<body onload="main();">
+
+    <div>
+        <canvas id="canvas"></canvas>
+    </div>
+    <div>
+        <input type="radio" id="string_shader" name="shader" value="original" checked="">
+        <label>original</label>
+        <br>
+        <input type="radio" id="script_shader" name="shader" value="blur">
+        <label>blur</label>
+        <br>
+        <input type="radio" id="script_shader" name="shader" value="blur_2">
+        <label>blur_2</label>
+        <br>
+        <input type="radio" id="script_shader" name="shader" value="blur_3">
+        <label>blur_3</label>
+        <br>
+        <input type="radio" id="script_shader" name="shader" value="blur_4">
+        <label>blur_4</label>
+    </div>
+
+</body>
+
+</html>
