@@ -1,0 +1,101 @@
+<html>
+
+<head>
+    <title> WebGL </title>
+    <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+    <script type="text/javascript">
+
+        var VSHADER_SOURCE =
+            'void main() {\n' +
+            ' gl_PointSize = 150.0;\n' +
+            ' gl_Position = vec4(0.0, 0.0, 0.0, 1.0);\n' +
+            ' }\n'
+
+
+        var FSHADER_SOURCE =
+            ' precision mediump float;\n' +
+            ' void main() {\n' +
+            ' float dist  =  distance(gl_PointCoord, vec2(0.5,0.5));\n' +
+            ' if(dist< 0.5){\n' +
+            ' gl_FragColor = vec4(1.0, 0.5, 0.0, 1.0);\n' +
+            ' }else{ discard;}\n' +
+            ' }\n';
+
+        function getShader(gl, id, str) {
+
+            var shader;
+            if (id == 'vs') {
+                shader = gl.createShader(gl.VERTEX_SHADER);
+
+            } else if (id == 'fs') {
+                shader = gl.createShader(gl.FRAGMENT_SHADER);
+            } else {
+                return null;
+            }
+
+            gl.shaderSource(shader, str);
+            gl.compileShader(shader);
+
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                alert(gl.getShaderInfoLog(shader));
+                return null;
+            }
+
+            return shader;
+
+        }
+
+        function initShaders(gl) {
+
+            var VS = getShader(gl, 'vs', VSHADER_SOURCE);
+            var FS = getShader(gl, 'fs', FSHADER_SOURCE);
+
+            shaderProgram = gl.createProgram();
+            gl.attachShader(shaderProgram, VS);
+            gl.attachShader(shaderProgram, FS);
+            gl.linkProgram(shaderProgram);
+
+
+            gl.useProgram(shaderProgram);
+        }
+
+        function webGLStart() {
+
+            var canvas = document.getElementById("canvasGL");
+            if (!canvas) {
+                console.log('failed');
+                return;
+            }
+            canvas.width = 800;
+            canvas.height = 600;
+
+            var gl;
+            try {
+                gl = canvas.getContext("webgl", { antialias: false });
+            } catch (e) {
+                alert("You are not webgl compatible :(");
+                return false;
+            }
+
+            initShaders(gl);
+
+
+            gl.clearColor(0.5, 0.5, 0.5, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.drawArrays(gl.POINTS, 0, 1);
+
+        }
+
+
+    </script>
+
+</head>
+
+
+<body onload="webGLStart();">
+
+    <canvas id="canvasGL" style="border: solid;"></canvas>
+    <br /><br />
+</body>
+
+</html>
