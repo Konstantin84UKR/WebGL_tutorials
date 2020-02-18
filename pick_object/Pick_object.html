@@ -1,0 +1,673 @@
+<html>
+
+<head>
+    <title> WebGL </title>
+    <style>
+        html {
+            overflow: hidden;
+        }
+    </style>
+    <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+    <script type="text/javascript" src="gl-matrix.js"></script>
+    <script type="text/javascript" src="ShaderUtil.js"></script>
+    <script type="text/javascript" src="MouseController.js"></script>
+    <script type="text/javascript" src="ModelUtil.js"></script>
+    <script type="text/javascript" src="dat.gui.js"></script>
+    <script type="text/javascript" src="guiSetting.js"></script>
+    <script type="text/javascript" src="VertexNormalsHelper.js"></script>
+    <script type="text/javascript" src="Axis.js"></script>
+
+
+    <script id="vertex_shader_shadow" type="x-shader/x-vertex">
+
+        attribute vec3 a_Position;
+
+        uniform mat4 u_Pmatrix;
+        uniform mat4 u_Mmatrix;
+        uniform mat4 u_Vmatrix;
+
+        varying float v_Depth;
+
+        void main() {
+
+        vec4 position = u_Pmatrix*u_Vmatrix*u_Mmatrix*vec4(a_Position,1.0);
+        float zBuf = position.z/position.w;
+        v_Depth = 0.5+zBuf*0.5;
+
+        gl_Position = position;
+        }
+
+      </script>
+    <script id="fragment_shader_shadow" type="x-shader/x-fragment">
+
+        precision highp float;
+
+        varying float v_Depth;
+        void main() {
+           gl_FragColor =  vec4(v_Depth,0.0,0.0,1.0);
+        }
+
+      </script>
+
+    <script id="vertex_shader" type="x-shader/x-vertex">
+
+        attribute vec3 a_Position;
+        attribute vec2 a_uv;
+        attribute vec3 a_normal;
+
+        uniform mat4 u_Pmatrix;
+        uniform mat4 u_Mmatrix;
+        uniform mat4 u_Vmatrix;
+        uniform mat4 u_Nmatrix;
+
+        uniform mat4 u_Lmatrix;
+        uniform mat4 u_PLmatrix;
+
+        varying vec2 v_uv;
+        varying vec3 v_color;
+        varying vec3 v_normal;
+        varying vec3 v_vertPos;
+        varying vec3 v_LightPos;
+
+        void main() {
+
+        v_uv = a_uv;
+
+        vec4 lightPos = u_Lmatrix * u_Mmatrix * vec4(a_Position,1.0);
+        lightPos = u_PLmatrix * lightPos;
+        vec3 lightPosDNC = lightPos.xyz/lightPos.w;
+
+        v_LightPos = vec3(0.5,0.5,0.5) + lightPosDNC * 0.5;
+
+        vec3 N = normalize(a_normal);
+             v_normal  = (u_Nmatrix * vec4(a_normal,1.0)).xyz;
+
+        vec3 v_vertPos = (u_Vmatrix * u_Mmatrix*vec4(a_Position,1.0)).xyz;
+
+        gl_Position = u_Pmatrix*u_Vmatrix*u_Mmatrix*vec4(a_Position,1.0);
+
+        }
+
+      </script>
+    <script id="fragment_shader" type="x-shader/x-fragment">
+
+        precision highp float;
+
+        uniform sampler2D samplerTex;
+        uniform sampler2D samplerShadowMap;
+        uniform float u_shininess;
+        uniform vec3 u_source_direction;
+        uniform vec3 u_view_direction;
+        uniform float u_CameraShadow;
+        uniform float u_SoftShadowPFC;
+
+        varying vec2 v_uv;
+        varying vec3 v_color;
+        varying vec3 v_normal;
+        varying vec3 v_vertPos;
+        varying vec3 v_LightPos;
+
+
+        const vec3 source_diffuse_color  = vec3(1.0,1.0,1.0);
+        const vec3 source_ambient_color  = vec3(0.2,0.2,0.2);
+        const vec3 source_specular_color = vec3(1.0,1.0,1.0);
+
+        void main() {
+
+        vec2 uv_ShadowMap = v_LightPos.xy;
+        vec4 ShadowMapColor = texture2D(samplerShadowMap,uv_ShadowMap);
+        float z_ShadowMap = ShadowMapColor.r;
+
+        float thisShadow = 1.0;
+        float thisSoftShadow = 1.0;
+
+        if (u_SoftShadowPFC > 0.5){
+
+            thisShadow = 0.0;
+            thisSoftShadow = 0.0;
+             vec2 duv;
+
+             for(float pcf_x= -2.0 ; pcf_x <= 2.0; pcf_x+= 1.) {
+
+                      for(float pcf_y= -2.0 ; pcf_y <= 2.0; pcf_y += 1.) {
+
+                          duv=vec2(pcf_x/512., pcf_y/512.);
+
+                          thisShadow += texture2D(samplerShadowMap, uv_ShadowMap+duv).r;
+
+                  }
+             }
+
+             thisShadow /= 25.0 ;
+
+            thisSoftShadow =  1.0-smoothstep(0.001, 0.04, v_LightPos.z - thisShadow );
+         }else{
+            if (z_ShadowMap + 0.01 < v_LightPos.z){
+                thisSoftShadow = 0.1;
+            }
+        }
+
+         if (u_CameraShadow > 0.5){
+
+             if (u_SoftShadowPFC > 0.5){
+                 gl_FragColor = vec4(thisShadow,thisShadow,thisShadow,1.);
+             }else{
+                 gl_FragColor = vec4(z_ShadowMap,z_ShadowMap,z_ShadowMap,1.);
+             }
+             return;
+         }
+
+        vec3 colorTex = vec3(texture2D(samplerTex,v_uv));
+
+        vec3 lightDir    = normalize(u_source_direction - v_vertPos);
+        vec3 L = normalize(lightDir);
+        vec3 V = normalize(u_view_direction);
+        vec3 R = normalize(reflect(-L,v_normal));
+
+        float S = dot(V,R);
+              S = clamp(S,0.0,1.0);
+              S = pow(S,u_shininess);
+
+        vec3 I_specular = source_specular_color * S;
+
+        vec3 color =  I_specular +  source_diffuse_color * max(0.0,dot(v_normal,L));
+        color = color * (thisSoftShadow) + source_ambient_color;
+        gl_FragColor =  vec4(color * colorTex,1.0);
+
+        }
+
+      </script>
+
+    <script type="text/javascript">
+
+        async function webGLStart() {
+
+            var canvas = document.getElementById("canvasGL");
+            if (!canvas) {
+                console.log('failed');
+                return;
+            }
+            canvas.width = 800;//screen.width;
+            canvas.height = 600;//screen.height;
+
+            var gl;
+            try {
+
+                gl = canvas.getContext("webgl", { antialias: true });
+                gl.canvas = canvas;
+
+            } catch (e) {
+                alert("You are not webgl compatible :(");
+                return false;
+            }
+
+
+            let gui = myGUI();
+            console.log(gui.source_directionX);
+
+            let MouseContr = new MouseController(gl);
+
+            // --------------------------------------------------------------
+            //let shaderProgramShadow  = createDomShaderProgram(gl,"vertex_shader_shadow","fragment_shader_shadow");
+            let shaderProgramShadow = await createPromiseShaderProgram(gl, 'resource/vertex_shader_shadow.glsl', 'resource/fragment_shader_shadow.glsl');
+            let u_Pmatrix_shadow = gl.getUniformLocation(shaderProgramShadow, 'u_Pmatrix');
+            let u_Mmatrix_shadow = gl.getUniformLocation(shaderProgramShadow, 'u_Mmatrix');
+            let u_Vmatrix_shadow = gl.getUniformLocation(shaderProgramShadow, 'u_Vmatrix');
+
+            let a_Position_shadow = gl.getAttribLocation(shaderProgramShadow, 'a_Position');
+            //gl.enableVertexAttribArray(a_Position_shadow);
+
+            // ------------------------------------------------------------------------------//
+
+            // let shaderProgram  = createDomShaderProgram(gl,"vertex_shader","fragment_shader");
+            let shaderProgram = await createPromiseShaderProgram(gl, 'resource/vertex_shader.glsl', 'resource/fragment_shader_floor.glsl');
+
+            let u_Pmatrix = gl.getUniformLocation(shaderProgram, 'u_Pmatrix');
+            let u_Mmatrix = gl.getUniformLocation(shaderProgram, 'u_Mmatrix');
+            let u_Vmatrix = gl.getUniformLocation(shaderProgram, 'u_Vmatrix');
+            let u_Nmatrix = gl.getUniformLocation(shaderProgram, 'u_Nmatrix');
+            let u_source_direction = gl.getUniformLocation(shaderProgram, 'u_source_direction');
+            let u_view_direction = gl.getUniformLocation(shaderProgram, 'u_view_direction');
+            let u_shininess = gl.getUniformLocation(shaderProgram, 'u_shininess');
+            let u_Lmatrix = gl.getUniformLocation(shaderProgram, 'u_Lmatrix');
+            let u_PLmatrix = gl.getUniformLocation(shaderProgram, 'u_PLmatrix');
+            let a_Position = gl.getAttribLocation(shaderProgram, 'a_Position');
+            let a_uv = gl.getAttribLocation(shaderProgram, 'a_uv');
+            let a_normal = gl.getAttribLocation(shaderProgram, 'a_normal');
+
+            let u_sampler = gl.getUniformLocation(shaderProgram, 'samplerTex');
+            let u_samplerShadowMap = gl.getUniformLocation(shaderProgram, 'samplerShadowMap');
+
+            let u_CameraShadow = gl.getUniformLocation(shaderProgram, 'u_CameraShadow');
+            let u_SoftShadowPFC = gl.getUniformLocation(shaderProgram, 'u_SoftShadowPFC');
+            let u_Clicked = gl.getUniformLocation(shaderProgram, 'u_Clicked');
+            let u_colorPick = gl.getUniformLocation(shaderProgram, 'u_colorPick');
+            let u_Pick_ok = gl.getUniformLocation(shaderProgram, 'u_Pick_ok');
+
+            gl.useProgram(shaderProgram);
+
+            gl.uniform1i(u_sampler, 0);
+            gl.uniform1i(u_samplerShadowMap, 1);
+
+            //--------------------------- create TEXTURE ------------------------------------//
+            let tex = get_texture(gl, "resource/paper.jpg");
+            loadJSON(gl, 'resource/Model.json');
+            // ------------------------ LOAD BUFFER MODEL -----------------------------------//
+            let ModelMain = loadBuffer(gl, gl.model.meshes[0]);
+            // ------------------------ LOAD BUFFER FLOOR -----------------------------------//
+            let ModelPlane = loadBuffer(gl, gl.model.meshes[1]);
+
+            // ------------------------ RENDER TO TEXTURE -----------------------------------//
+            let SHADOW_MAP_SIZE = 512;
+            var fb = gl.createFramebuffer();
+            gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+
+            var rb = gl.createRenderbuffer();
+            gl.bindRenderbuffer(gl.RENDERBUFFER, rb);
+            gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
+
+            var texture_shadow_map = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, texture_shadow_map);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture_shadow_map, 0);
+            gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rb);
+
+            gl.bindTexture(gl.TEXTURE_2D, null);
+            gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+            // -------------------------- create MATRIX -------------------------------------//
+
+            let PROJMATRIX = glMatrix.mat4.create();
+            glMatrix.mat4.identity(PROJMATRIX);
+            let fovy = 40 * Math.PI / 180;
+            glMatrix.mat4.perspective(PROJMATRIX, fovy, canvas.width / canvas.height, 1, 50);
+
+            //---- SHADOW_MAP_MATRIX -------//
+            let PROJMATRIX_SHADOW = glMatrix.mat4.create();
+            glMatrix.mat4.identity(PROJMATRIX_SHADOW);
+            glMatrix.mat4.ortho(PROJMATRIX_SHADOW, -15., 15., -15., 15., .1, 25.);
+            //-----------------------------//
+            let MODELMATRIX = glMatrix.mat4.create();
+            let MODELMATRIX_FLOOR = glMatrix.mat4.create();
+            let MODELMATRIX_SHADOW = glMatrix.mat4.create();
+            let VIEWMATRIX = glMatrix.mat4.create();
+            let VIEWMATRIX_CAMERA = glMatrix.mat4.create();
+            let NORMALMATRIX = glMatrix.mat4.create();
+            let NORMALMATRIX_HELPER = glMatrix.mat4.create();
+
+            let VIEWMATRIX_SHADOW_MAP = glMatrix.mat4.create();
+
+            //---- NORMAL -----//
+            let shaderProgram_Normal = loadNormalShaders(gl);
+            //---- AXIS -------//
+            let shaderProgram_axis = loadAxisShaders(gl);
+
+            //----------------------------- RENDER -----------------------------------------------//
+
+            gl.enable(gl.DEPTH_TEST);
+            gl.depthFunc(gl.LEQUAL);
+            gl.enable(gl.CULL_FACE);
+            gl.cullFace(gl.BACK);
+            gl.clearDepth(1.0);
+
+            let Z = 0.;
+            let AMORTIZATION = 0.8;
+            let animate;
+            let x = 0.0;
+            let picked = false;
+            ModelMain.this_objPick = false;
+            ModelPlane.this_objPick = false;
+
+            animate = function (time) {
+
+                //-------------------------- translate  --------------------------------------------//
+                MouseContr.dX *= AMORTIZATION, MouseContr.dY *= AMORTIZATION;
+                MouseContr.theta += MouseContr.dX, MouseContr.phi += MouseContr.dY;
+
+                Z = Z + MouseContr.dZ; if (Z < 1.0) { Z = 1.0 };
+
+                //--------------------------- VIEWMATRIX -------------------------------------------//
+                glMatrix.mat4.identity(VIEWMATRIX);
+                glMatrix.mat4.lookAt(VIEWMATRIX, [gui.view_directionX, gui.view_directionY, gui.view_directionZ], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0]);
+                //------------------------- SHADOW_MAP VIEWMATRIX ----------------------------------//
+                glMatrix.mat4.identity(VIEWMATRIX_SHADOW_MAP);
+                glMatrix.mat4.lookAt(VIEWMATRIX_SHADOW_MAP, [gui.source_directionX, gui.source_directionY, gui.source_directionZ], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0]);
+
+                //----------------- NORMALMATRIX_HELPER --------------------------------------------//
+                glMatrix.mat4.identity(NORMALMATRIX_HELPER);
+                glMatrix.mat4.scale(NORMALMATRIX_HELPER, NORMALMATRIX_HELPER, [1.0, Z, 1.0]);
+                glMatrix.mat4.invert(NORMALMATRIX_HELPER, NORMALMATRIX_HELPER);
+                glMatrix.mat4.transpose(NORMALMATRIX_HELPER, NORMALMATRIX_HELPER);
+
+                //----------------- MODELMATRIX  --------------------------------------------//
+                glMatrix.mat4.identity(MODELMATRIX);
+                let model_translate = glMatrix.vec3.create();
+                glMatrix.vec3.set(model_translate, gui.model_X, gui.model_Y, gui.model_Z);
+
+
+                //x = x + 0.01;
+                glMatrix.mat4.translate(MODELMATRIX, MODELMATRIX, model_translate);
+                glMatrix.mat4.rotateX(MODELMATRIX, MODELMATRIX, x);
+                glMatrix.mat4.rotateY(MODELMATRIX, MODELMATRIX, MouseContr.theta);
+                glMatrix.mat4.scale(MODELMATRIX, MODELMATRIX, [1.0, Z, 1.0]);
+                //----------------- NORMALMATRIX_REAL --------------------------------------------//
+                glMatrix.mat4.invert(NORMALMATRIX, MODELMATRIX);
+                glMatrix.mat4.transpose(NORMALMATRIX, NORMALMATRIX);
+
+                //----------------- MODELMATRIX_FLOOR --------------------------------------------//
+                glMatrix.mat4.identity(MODELMATRIX_FLOOR);
+
+                //------------------------ RENDER THE SHADOW MAP ------------------------------------//
+
+                gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+                gl.useProgram(shaderProgramShadow);
+
+                gl.viewport(0.0, 0.0, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
+                gl.clearColor(1.0, 1.0, 1.0, 1.0);
+                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+                //
+                gl.uniformMatrix4fv(u_Pmatrix_shadow, false, PROJMATRIX_SHADOW);
+                gl.uniformMatrix4fv(u_Mmatrix_shadow, false, MODELMATRIX);
+                gl.uniformMatrix4fv(u_Vmatrix_shadow, false, VIEWMATRIX_SHADOW_MAP);
+                //
+                gl.enableVertexAttribArray(a_Position_shadow);
+                //
+                gl.bindBuffer(gl.ARRAY_BUFFER, ModelMain.TRIANGLE_VERTEX);
+                gl.vertexAttribPointer(a_Position_shadow, 3, gl.FLOAT, false, 4 * (3), 0);
+                //
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ModelMain.TRIANGLE_FACES);
+                gl.drawElements(gl.TRIANGLES, ModelMain.ModelIndiceslength, gl.UNSIGNED_SHORT, 0);
+                //
+
+                glMatrix.mat4.identity(MODELMATRIX_FLOOR);
+                gl.uniformMatrix4fv(u_Mmatrix_shadow, false, MODELMATRIX_FLOOR);
+                //
+                gl.bindBuffer(gl.ARRAY_BUFFER, ModelPlane.TRIANGLE_VERTEX);
+                gl.vertexAttribPointer(a_Position_shadow, 3, gl.FLOAT, false, 4 * (3), 0);
+                //
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ModelPlane.TRIANGLE_FACES);
+                gl.drawElements(gl.TRIANGLES, ModelPlane.ModelIndiceslength, gl.UNSIGNED_SHORT, 0);
+                //
+                gl.disableVertexAttribArray(a_Position_shadow);
+                gl.flush();
+                gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+                ///////////////////////////////////////////
+
+
+
+                //------------------------------- MAIN RENDER -------------------------------------------//
+                gl.viewport(0.0, 0.0, canvas.width, canvas.height);
+                gl.clearColor(0.5, 0.5, 0.5, 1.0);
+                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+                //--------------------------------------------------------------------------------------//
+                gl.useProgram(shaderProgram);
+                gl.enableVertexAttribArray(a_Position);
+                gl.enableVertexAttribArray(a_uv);
+                gl.enableVertexAttribArray(a_normal);
+
+                if (gui.CameraShadow == true) {
+                    gl.uniformMatrix4fv(u_Pmatrix, false, PROJMATRIX_SHADOW);
+                    gl.uniformMatrix4fv(u_Mmatrix, false, MODELMATRIX);
+                    gl.uniformMatrix4fv(u_Vmatrix, false, VIEWMATRIX_SHADOW_MAP);
+
+                } else {
+                    gl.uniformMatrix4fv(u_Pmatrix, false, PROJMATRIX);
+                    gl.uniformMatrix4fv(u_Mmatrix, false, MODELMATRIX);
+                    gl.uniformMatrix4fv(u_Vmatrix, false, VIEWMATRIX);
+                }
+
+                gl.uniformMatrix4fv(u_Nmatrix, false, NORMALMATRIX);
+                gl.uniformMatrix4fv(u_Lmatrix, false, VIEWMATRIX_SHADOW_MAP);
+                gl.uniformMatrix4fv(u_PLmatrix, false, PROJMATRIX_SHADOW);
+
+
+                let bool_CameraShadow = (gui.CameraShadow == true) ? 1.0 : 0.0;
+                gl.uniform1f(u_CameraShadow, bool_CameraShadow);
+
+                let bool_u_SoftShadowPFC = (gui.PCF == true) ? 1.0 : 0.0;
+                gl.uniform1f(u_SoftShadowPFC, bool_u_SoftShadowPFC);
+
+                let bool_u_Clicked = (gui.Clicked == true) ? 1.0 : 0.0;
+                gl.uniform1f(u_Clicked, bool_u_Clicked);
+                gl.uniform4fv(u_colorPick, [1.0, 0.0, 0.0, 1.0]);
+
+                //-------------------------- Lighting ----------------------------------------------
+                let source_direction = glMatrix.vec3.create();
+                glMatrix.vec3.set(source_direction, gui.source_directionX, gui.source_directionY, gui.source_directionZ);
+
+                gl.uniform3fv(u_source_direction, source_direction);
+                gl.uniform1f(u_shininess, gui.shininess);
+
+                glMatrix.mat4.identity(VIEWMATRIX_CAMERA);
+                let view_direction = glMatrix.vec3.create();
+                glMatrix.vec3.set(view_direction, gui.view_directionX, gui.view_directionY, gui.view_directionZ);
+                glMatrix.vec3.transformMat4(view_direction, view_direction, VIEWMATRIX_CAMERA);
+                gl.uniform3fv(u_view_direction, view_direction);
+
+                if (tex.webGLtexture) {
+
+                    gl.activeTexture(gl.TEXTURE1);
+                    gl.bindTexture(gl.TEXTURE_2D, texture_shadow_map);
+
+                    gl.activeTexture(gl.TEXTURE0);
+                    gl.bindTexture(gl.TEXTURE_2D, tex.webGLtexture);
+                }
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, ModelMain.TRIANGLE_VERTEX);
+                gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 4 * (3), 0);
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, ModelMain.TRIANGLE_NORMAL);
+                gl.vertexAttribPointer(a_normal, 3, gl.FLOAT, false, 4 * (3), 0);
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, ModelMain.TRIANGLE_UV);
+                gl.vertexAttribPointer(a_uv, 2, gl.FLOAT, false, 4 * (2), 0);
+
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ModelMain.TRIANGLE_FACES);
+
+                if (MouseContr.Pick) {
+
+                    gl.uniform1f(u_Clicked, 1.0);
+                    gl.uniform4fv(u_colorPick, [1.0, 0.0, 0.1, 1.0]);
+
+                    gl.drawElements(gl.TRIANGLES, ModelMain.ModelIndiceslength, gl.UNSIGNED_SHORT, 0);
+                    gl.flush();
+
+                    let pixels = new Uint8Array(4);
+                    let pixelsMainModel = new Uint8Array([255, 0, 25, 255]);
+                    let pixelsMainPlane = new Uint8Array([0, 0, 255, 255]);
+
+                    gl.readPixels(MouseContr.x, MouseContr.y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+                    gl.uniform1f(u_Clicked, 0.0);
+
+                    //MouseContr.Pick = false;
+                    console.log(pixels.toString() == pixelsMainModel.toString());
+                    console.log(pixels);
+                    console.log(pixelsMainModel);
+
+                    if (pixels.toString() == pixelsMainModel.toString()) {
+
+                        ModelMain.this_objPick = true;
+                        ModelPlane.this_objPick = false;
+
+                    } else if (pixels.toString() == pixelsMainPlane.toString()) {
+
+                        ModelPlane.this_objPick = true;
+                        ModelMain.this_objPick = false;
+
+                    } else {
+
+                        ModelPlane.this_objPick = false;
+                        ModelMain.this_objPick = false;
+                    }
+
+
+                }
+
+                if (ModelMain.this_objPick) {
+                    gl.uniform3fv(u_Pick_ok, [0.9, 0.5, 0.0]);
+                    ModelPlane.this_objPick = false;
+
+                } else {
+                    gl.uniform3fv(u_Pick_ok, [0.0, 0.0, 0.0]);
+                }
+
+                gl.drawElements(gl.TRIANGLES, ModelMain.ModelIndiceslength, gl.UNSIGNED_SHORT, 0);
+                gl.flush();
+
+
+                gl.disableVertexAttribArray(a_Position);
+                gl.disableVertexAttribArray(a_uv);
+                gl.disableVertexAttribArray(a_normal);
+
+                //------------------------- PLANE ---------------------------------------------------------//
+
+                gl.enableVertexAttribArray(a_Position);
+                gl.enableVertexAttribArray(a_uv);
+                gl.enableVertexAttribArray(a_normal);
+
+
+                glMatrix.mat4.identity(MODELMATRIX_FLOOR);
+
+                if (gui.CameraShadow == true) {
+
+                    gl.uniformMatrix4fv(u_Pmatrix, false, PROJMATRIX_SHADOW);
+                    gl.uniformMatrix4fv(u_Mmatrix, false, MODELMATRIX_FLOOR);
+                    gl.uniformMatrix4fv(u_Vmatrix, false, VIEWMATRIX_SHADOW_MAP);
+
+                } else {
+
+                    gl.uniformMatrix4fv(u_Pmatrix, false, PROJMATRIX);
+                    gl.uniformMatrix4fv(u_Mmatrix, false, MODELMATRIX_FLOOR);
+                    gl.uniformMatrix4fv(u_Vmatrix, false, VIEWMATRIX);
+                    gl.uniform4fv(u_colorPick, [0.0, 0.0, 1.0, 1.0]);
+                    //gl.uniform3fv(u_Pick_ok, [0.0, 0.0, 0.0]);
+                }
+
+                //----------------- NORMALMATRIX_REAL --------------------------------------------//
+
+                glMatrix.mat4.invert(NORMALMATRIX, MODELMATRIX_FLOOR);
+                glMatrix.mat4.transpose(NORMALMATRIX, NORMALMATRIX);
+
+                gl.uniformMatrix4fv(u_Nmatrix, false, NORMALMATRIX);
+
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, ModelPlane.TRIANGLE_VERTEX);
+                gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 4 * (3), 0);
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, ModelPlane.TRIANGLE_NORMAL);
+                gl.vertexAttribPointer(a_normal, 3, gl.FLOAT, false, 4 * (3), 0);
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, ModelPlane.TRIANGLE_UV);
+                gl.vertexAttribPointer(a_uv, 2, gl.FLOAT, false, 4 * (2), 0);
+
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ModelPlane.TRIANGLE_FACES);
+
+
+                if (MouseContr.Pick && ModelMain.this_objPick == false) {
+
+                    gl.uniform1f(u_Clicked, 1.0);
+                    gl.uniform4fv(u_colorPick, [0.0, 0.0, 1.0, 1.0]);
+
+                    gl.drawElements(gl.TRIANGLES, ModelPlane.ModelIndiceslength, gl.UNSIGNED_SHORT, 0);
+
+                    gl.uniform4fv(u_colorPick, [1.0, 0.0, 0.1, 1.0]);
+
+                    gl.drawElements(gl.TRIANGLES, ModelMain.ModelIndiceslength, gl.UNSIGNED_SHORT, 0);
+
+                    gl.flush();
+                    let pixels = new Uint8Array(4);
+                    let pixelsMainModel = new Uint8Array([255, 0, 25, 255]);
+                    let pixelsMainPlane = new Uint8Array([0, 0, 255, 255]);
+
+                    gl.readPixels(MouseContr.x, MouseContr.y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+                    gl.uniform1f(u_Clicked, 0.0);
+
+                    MouseContr.Pick = false;
+
+                    console.log(pixels.toString() == pixelsMainModel.toString());
+                    console.log(pixels.toString() == pixelsMainPlane.toString());
+                    console.log(pixels);
+                    console.log(pixelsMainModel);
+                    console.log(pixelsMainPlane);
+
+                    if (pixels.toString() == pixelsMainModel.toString()) {
+
+                        ModelMain.this_objPick = true;
+                        ModelPlane.this_objPick = false;
+
+                    } else if (pixels.toString() == pixelsMainPlane.toString()) {
+
+                        ModelPlane.this_objPick = true;
+                        ModelMain.this_objPick = false;
+
+                    } else {
+
+                        ModelPlane.this_objPick = false;
+                        ModelMain.this_objPick = false;
+                    }
+
+
+                }
+
+                if (ModelMain.this_objPick) {
+                    gl.uniform3fv(u_Pick_ok, [0.9, 0.5, 0.0]);
+                    ModelPlane.this_objPick = false;
+
+                } else {
+                    gl.uniform3fv(u_Pick_ok, [0.0, 0.0, 0.0]);
+                }
+
+                if (ModelPlane.this_objPick) {
+                    gl.uniform3fv(u_Pick_ok, [0.9, 0.5, 0.0]);
+                    ModelMain.this_objPick = false;
+
+                } else {
+                    gl.uniform3fv(u_Pick_ok, [0.0, 0.0, 0.0]);
+                }
+
+                gl.drawElements(gl.TRIANGLES, ModelPlane.ModelIndiceslength, gl.UNSIGNED_SHORT, 0);
+
+                gl.disableVertexAttribArray(a_Position);
+                gl.disableVertexAttribArray(a_uv);
+                gl.disableVertexAttribArray(a_normal);
+
+
+
+                //------------------------- NORMAL HELPER ------------------------------------------------//
+                if (gui.normal) {
+                    VertexNormalHelper(gl, shaderProgram_Normal, PROJMATRIX, VIEWMATRIX, MODELMATRIX, NORMALMATRIX_HELPER);
+                };
+                //------------------------- AXIS ---------------------------------------------------------//
+                if (gui.axis) {
+                    loadAxisHelper(gl, shaderProgram_axis, PROJMATRIX, VIEWMATRIX, MODELMATRIX);
+                };
+                //------------------------- PLANE SHADOW_MAP TEST ----------------------------------------------------//
+
+                window.requestAnimationFrame(animate);
+            };
+            animate(0);
+        }
+
+
+    </script>
+</head>
+
+<body style='margin:10px' onload="webGLStart();">
+
+    <canvas id="canvasGL" style='position: absolute; background-color: black; -webkit-box-shadow: 5px 5px 10px 1px #0D0808;
+box-shadow: 5px 5px 10px 1px #0D0808; '></canvas>
+    <br /><br />
+
+
+
+</body>
+
+</html>
