@@ -1,0 +1,191 @@
+<html>
+
+<head>
+    <title> WebGL </title>
+    <style>
+        html {
+            overflow: hidden;
+        }
+    </style>
+    <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+    <script type="text/javascript" src="gl-matrix.js"></script>
+    <script type="text/javascript" src="ShaderUtil.js"></script>
+    <script type="text/javascript" src="MouseController.js"></script>
+    <script type="text/javascript" src="ModelUtil.js"></script>
+    <script type="text/javascript" src="dat.gui.js"></script>
+    <script type="text/javascript" src="guiSetting_easy.js"></script>
+    <script type="text/javascript" src="VertexNormalsHelper.js"></script>
+    <script type="text/javascript" src="Axis.js"></script>
+
+
+    <script type="text/javascript">
+
+        async function webGLStart() {
+
+            var canvas = document.getElementById("canvasGL");
+            if (!canvas) {
+                console.log('failed');
+                return;
+            }
+            canvas.width = 1600;//screen.width;
+            canvas.height = 800;//screen.height;
+
+            var gl;
+            try {
+
+                gl = canvas.getContext("webgl", { antialias: true });
+                gl.canvas = canvas;
+
+            } catch (e) {
+                alert("You are not webgl compatible :(");
+                return false;
+            }
+
+
+            let gui = myGUI();
+            let MouseContr = new MouseController(gl);
+
+            // ------------------------------------------------------------------------------//
+            let shaderProgram = await createPromiseShaderProgram(gl, 'resource/vertex_shader_fog.glsl', 'resource/fragment_shader_fog.glsl');
+
+            let u_Pmatrix = gl.getUniformLocation(shaderProgram, 'u_Pmatrix');
+            let u_Mmatrix = gl.getUniformLocation(shaderProgram, 'u_Mmatrix');
+            let u_Vmatrix = gl.getUniformLocation(shaderProgram, 'u_Vmatrix');
+            let u_sampler = gl.getUniformLocation(shaderProgram, 'samplerTex');
+
+            let u_FogDist = gl.getUniformLocation(shaderProgram, 'u_FogDist');
+            let u_fogColor = gl.getUniformLocation(shaderProgram, 'u_fogColor');
+
+            let a_Position = gl.getAttribLocation(shaderProgram, 'a_Position');
+            let a_uv = gl.getAttribLocation(shaderProgram, 'a_uv');
+
+            gl.useProgram(shaderProgram);
+            gl.uniform1i(u_sampler, 0);
+
+            //--------------------------- create TEXTURE ------------------------------------//
+            let tex = get_texture(gl, "resource/paper.jpg");
+            loadJSON(gl, 'resource/model.json');
+            // ------------------------ LOAD BUFFER MODEL -----------------------------------//
+            let ModelMain = loadBuffer(gl, gl.model.meshes[0]);
+
+            // -------------------------- create MATRIX -------------------------------------//
+            let PROJMATRIX = glMatrix.mat4.create();
+            glMatrix.mat4.identity(PROJMATRIX);
+            let fovy = 40 * Math.PI / 180;
+            glMatrix.mat4.perspective(PROJMATRIX, fovy, canvas.width / canvas.height, 1, 50);
+
+            //-----------------------------//
+            let MODELMATRIX = glMatrix.mat4.create();
+            let VIEWMATRIX = glMatrix.mat4.create();
+            let NORMALMATRIX = glMatrix.mat4.create();
+            let NORMALMATRIX_HELPER = glMatrix.mat4.create();
+            //---- NORMAL -----//
+            let shaderProgram_Normal = loadNormalShaders(gl);
+            //---- AXIS -------//
+            let shaderProgram_axis = loadAxisShaders(gl);
+
+            //-- RENDER ------------------------------------------------------------------------------//
+            gl.enable(gl.DEPTH_TEST);
+            gl.depthFunc(gl.LEQUAL);
+            gl.clearDepth(1.0);
+
+            let AMORTIZATION = 0.9;
+            let Render;
+            let picked = false;
+            let FogDist = glMatrix.vec2.create();
+            ModelMain.this_objPick = false;
+
+            Render = function (time) {
+
+                //-- VIEWMATRIX ------------------------------------------------------------------------//
+                glMatrix.mat4.identity(VIEWMATRIX);
+                glMatrix.mat4.lookAt(VIEWMATRIX, [5.0, 5.0, 10.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0]);
+                //-- MODELMATRIX  ----------------------------------------------------------------------//
+                glMatrix.mat4.identity(MODELMATRIX);
+                //-- translate MODELMATRIX--------------------------------------------------------------//
+                MouseContr.dX *= AMORTIZATION, MouseContr.dY *= AMORTIZATION;
+
+                glMatrix.mat4.rotateY(MODELMATRIX, MODELMATRIX, MouseContr.theta);
+
+                //-- NORMALMATRIX_REAL ------------------------------------------------------------------//
+                glMatrix.mat4.invert(NORMALMATRIX, MODELMATRIX);
+                glMatrix.mat4.transpose(NORMALMATRIX, NORMALMATRIX);
+                //-- MAIN RENDER ------------------------------------------------------------------------//
+                gl.viewport(0.0, 0.0, canvas.width, canvas.height);
+
+                gl.clearColor(gui.Fog.colorFog[0] / 256, gui.Fog.colorFog[1] / 256, gui.Fog.colorFog[2] / 256, 1.0);
+                // gl.clearColor(0.5, 0.5, 0.5, 1.0);
+                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+                //---------------------------------------------------------------------------------------//
+                gl.useProgram(shaderProgram);
+                gl.enableVertexAttribArray(a_Position);
+                gl.enableVertexAttribArray(a_uv);
+
+                gl.uniformMatrix4fv(u_Pmatrix, false, PROJMATRIX);
+                gl.uniformMatrix4fv(u_Mmatrix, false, MODELMATRIX);
+                gl.uniformMatrix4fv(u_Vmatrix, false, VIEWMATRIX);
+
+                if (tex.webGLtexture) {
+                    gl.activeTexture(gl.TEXTURE0);
+                    gl.bindTexture(gl.TEXTURE_2D, tex.webGLtexture);
+                }
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, ModelMain.TRIANGLE_VERTEX);
+                gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 4 * (3), 0);
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, ModelMain.TRIANGLE_UV);
+                gl.vertexAttribPointer(a_uv, 2, gl.FLOAT, false, 4 * (2), 0);
+
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ModelMain.TRIANGLE_FACES);
+
+                glMatrix.vec2.set(FogDist, gui.Fog.FogDist_near, gui.Fog.FogDist_far);
+                console.log(FogDist);
+                gl.uniform2fv(u_FogDist, FogDist);
+                gl.uniform3f(u_fogColor, gui.Fog.colorFog[0] / 256, gui.Fog.colorFog[1] / 256, gui.Fog.colorFog[2] / 256);
+
+
+                gl.uniformMatrix4fv(u_Mmatrix, false, MODELMATRIX);
+                gl.drawElements(gl.TRIANGLES, ModelMain.ModelIndiceslength, gl.UNSIGNED_SHORT, 0);
+
+                for (let i = 0; i < 5; i++) {
+                    glMatrix.mat4.translate(MODELMATRIX, MODELMATRIX, [0.0, 0.0, -5.0, 1.0]);
+                    gl.uniformMatrix4fv(u_Mmatrix, false, MODELMATRIX);
+                    gl.drawElements(gl.TRIANGLES, ModelMain.ModelIndiceslength, gl.UNSIGNED_SHORT, 0);
+                }
+
+                gl.flush();
+
+                gl.disableVertexAttribArray(a_Position);
+                gl.disableVertexAttribArray(a_uv);
+
+                //-- NORMAL HELPER -----------------------------------------------------------------------//
+                if (gui.settingGUI.normal) {
+                    VertexNormalHelper(gl, shaderProgram_Normal, PROJMATRIX, VIEWMATRIX, MODELMATRIX, NORMALMATRIX_HELPER);
+                }
+                ;
+                //-- AXIS --------------------------------------------------------------------------------//
+                if (gui.settingGUI.axis) {
+                    loadAxisHelper(gl, shaderProgram_axis, PROJMATRIX, VIEWMATRIX, MODELMATRIX);
+                }
+                ;
+
+                window.requestAnimationFrame(Render);
+            };
+            Render(0);
+        }
+
+
+    </script>
+</head>
+
+<body style='margin:10px' onload="webGLStart();">
+
+    <canvas id="canvasGL" style='position: absolute; background-color: black; -webkit-box-shadow: 5px 5px 10px 1px #0D0808;
+box-shadow: 5px 5px 10px 1px #0D0808; '></canvas>
+    <br /><br />
+
+
+</body>
+
+</html>
