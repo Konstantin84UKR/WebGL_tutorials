@@ -17,6 +17,7 @@
     <script type="text/javascript" src="guiSetting.js"></script>
     <script type="text/javascript" src="VertexNormalsHelper.js"></script>
     <script type="text/javascript" src="Axis.js"></script>
+    <script type="text/javascript" src="Camera.js"></script>
 
     <script type="text/javascript">
         async function webGLStart() {
@@ -137,6 +138,8 @@
 
             let VIEWMATRIX_SHADOW_MAP = glMatrix.mat4.create();
 
+            let camera = new Camera(gl, "perspective");
+
             //---- NORMAL -----//
             let shaderProgram_Normal = loadNormalShaders(gl);
             //---- AXIS -------//
@@ -241,6 +244,10 @@
                     gl.uniformMatrix4fv(u_Pmatrix, false, PROJMATRIX);
                     gl.uniformMatrix4fv(u_Mmatrix, false, MODELMATRIX);
                     gl.uniformMatrix4fv(u_Vmatrix, false, VIEWMATRIX);
+
+                    // gl.uniformMatrix4fv(u_Pmatrix, false, camera.pMatrix);
+                    // gl.uniformMatrix4fv(u_Mmatrix, false, MODELMATRIX);
+                    // gl.uniformMatrix4fv(u_Vmatrix, false, camera.vMatrix);
                 }
 
                 gl.uniformMatrix4fv(u_Nmatrix, false, NORMALMATRIX);
