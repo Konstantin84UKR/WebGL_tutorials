@@ -1,112 +1,114 @@
 <html>
+
 <head>
-<title> WebGL </title>
-<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
-   
- <script type="text/javascript">
-  
-  var VSHADER_SOURCE = 
-    'attribute vec4 a_Position;\n'+
-	'attribute float a_PointSize;\n'+
-	'void main() {\n' + 
-	' gl_PointSize = a_PointSize;\n'+ 
-    ' gl_Position = a_Position;\n'+
-    ' }\n'
-	
-   var FSHADER_SOURCE =
-   ' precision mediump float;\n' +   
-   ' void main() {\n' + 
-   ' gl_FragColor = vec4(0.2, 0.2, 0.8, 1.0);\n' + 
-   ' }\n'; 
-	
-	function getShader(gl, id, str){
-	 
-	 var shader;
-	 if(id == 'vs'){
-	    shader = gl.createShader(gl.VERTEX_SHADER);	 
-	 
-	 }else if(id=='fs'){
-	    shader = gl.createShader(gl.FRAGMENT_SHADER);	
-	 }else {
-            return null;
-     }
+	<title> WebGL </title>
+	<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
 
-        gl.shaderSource(shader, str);
-        gl.compileShader(shader);
-	
-     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-            alert(gl.getShaderInfoLog(shader));
-            return null;
-        }
-	 
-	 return shader;
-	
-	}
-		
-    function initShaders(gl){
-       
-        var VS = getShader(gl,'vs',VSHADER_SOURCE);   
-	    var FS = getShader(gl,'fs',FSHADER_SOURCE);
-		 
-			
-		shaderProgram = gl.createProgram();
-        gl.attachShader(shaderProgram,VS); 
-        gl.attachShader(shaderProgram,FS);	
-        gl.linkProgram(shaderProgram);
-		gl.useProgram(shaderProgram);
-			
-		var a_Position = gl.getAttribLocation(shaderProgram,'a_Position');
-		if (a_Position < 0 ){
-	     console.log('failed a_Position');
-	     return;
-	    }
-		var a_PointSize = gl.getAttribLocation(shaderProgram,'a_PointSize');
-		if (a_PointSize < 0 ){
-	     console.log('failed a_PointSize');
-	     return;
-	    }
-		
-		gl.vertexAttrib1f(a_PointSize, 10.0);
-		gl.vertexAttrib3f(a_Position,0.0, 0.5, 0.0);
-    }
-	
-    function webGLStart() {
-     	 
-	  var canvas = document.getElementById("canvasGL");
-	  if (!canvas){
-	     console.log('failed');
-         return;		 
-	  }
-	  canvas.width =400;
-      canvas.height=400;
-	    
-	  var gl;
-        try {
-        gl = canvas.getContext("experimental-webgl", {antialias: false});
-       } catch (e) {
-       alert("You are not webgl compatible :(");
-       return false;
-       }
-	  
-	  initShaders(gl);
-	  
-	  
-	  gl.clearColor(0.5,0.5,0.5,1.0);
-	  gl.clear(gl.COLOR_BUFFER_BIT);
-	  gl.drawArrays(gl.POINTS, 0, 1);
-	  
-    }
+	<script type="text/javascript">
+
+		var VSHADER_SOURCE =
+			'attribute vec4 a_Position;\n' +
+			'attribute float a_PointSize;\n' +
+			'void main() {\n' +
+			' gl_PointSize = a_PointSize;\n' +
+			' gl_Position = a_Position;\n' +
+			' }\n'
+
+		var FSHADER_SOURCE =
+			' precision mediump float;\n' +
+			' void main() {\n' +
+			' gl_FragColor = vec4(0.2, 0.2, 0.8, 1.0);\n' +
+			' }\n';
+
+		function getShader(gl, id, str) {
+
+			var shader;
+			if (id == 'vs') {
+				shader = gl.createShader(gl.VERTEX_SHADER);
+
+			} else if (id == 'fs') {
+				shader = gl.createShader(gl.FRAGMENT_SHADER);
+			} else {
+				return null;
+			}
+
+			gl.shaderSource(shader, str);
+			gl.compileShader(shader);
+
+			if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+				alert(gl.getShaderInfoLog(shader));
+				return null;
+			}
+
+			return shader;
+
+		}
+
+		function initShaders(gl) {
+
+			var VS = getShader(gl, 'vs', VSHADER_SOURCE);
+			var FS = getShader(gl, 'fs', FSHADER_SOURCE);
 
 
-</script>
+			shaderProgram = gl.createProgram();
+			gl.attachShader(shaderProgram, VS);
+			gl.attachShader(shaderProgram, FS);
+			gl.linkProgram(shaderProgram);
+			gl.useProgram(shaderProgram);
+
+			var a_Position = gl.getAttribLocation(shaderProgram, 'a_Position');
+			if (a_Position < 0) {
+				console.log('failed a_Position');
+				return;
+			}
+			var a_PointSize = gl.getAttribLocation(shaderProgram, 'a_PointSize');
+			if (a_PointSize < 0) {
+				console.log('failed a_PointSize');
+				return;
+			}
+
+			gl.vertexAttrib1f(a_PointSize, 10.0);
+			gl.vertexAttrib3f(a_Position, 0.0, 0.5, 0.0);
+		}
+
+		function webGLStart() {
+
+			var canvas = document.getElementById("canvasGL");
+			if (!canvas) {
+				console.log('failed');
+				return;
+			}
+			canvas.width = 400;
+			canvas.height = 400;
+
+			var gl;
+			try {
+				gl = canvas.getContext("experimental-webgl", { antialias: false });
+			} catch (e) {
+				alert("You are not webgl compatible :(");
+				return false;
+			}
+
+			initShaders(gl);
+
+
+			gl.clearColor(0.5, 0.5, 0.5, 1.0);
+			gl.clear(gl.COLOR_BUFFER_BIT);
+			gl.drawArrays(gl.POINTS, 0, 1);
+
+		}
+
+
+	</script>
 
 </head>
 
 
 <body onload="webGLStart();">
-   
-    <canvas id="canvasGL" style="border: solid;" width="400" height="400"></canvas>
-    <br/><br />
-  	</body>
+
+	<canvas id="canvasGL" style='position: absolute; background-color: black; -webkit-box-shadow: 5px 5px 10px 1px #0D0808;
+	box-shadow: 5px 5px 10px 1px #0D0808; '>></canvas>
+	<br /><br />
+</body>
 
 </html>
