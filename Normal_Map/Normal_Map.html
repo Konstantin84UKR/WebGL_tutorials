@@ -1,0 +1,412 @@
+<html>
+
+<head>
+    <title> WebGL </title>
+    <style>
+        html {
+            overflow: hidden;
+        }
+    </style>
+    <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+    <script type="text/javascript" src="gl-matrix.js"></script>
+    <script type="text/javascript" src="ShaderUtil.js"></script>
+    <script type="text/javascript" src="MouseController.js"></script>
+    <script type="text/javascript" src="ModelUtil.js"></script>
+    <script type="text/javascript" src="dat.gui.js"></script>
+    <script type="text/javascript" src="guiSetting.js"></script>
+    <script type="text/javascript" src="VertexNormalsHelper.js"></script>
+    <script type="text/javascript" src="Axis.js"></script>
+    <script type="text/javascript" src="Camera.js"></script>
+
+    <script type="text/javascript">
+        async function webGLStart() {
+
+            const canvas = document.getElementById("canvasGL");
+            if (!canvas) {
+                console.log('failed');
+                return;
+            }
+            canvas.width = 1100; //screen.width;
+            canvas.height = 700; screen.height;
+
+            let gl;
+            try {
+
+                gl = canvas.getContext("webgl", { antialias: true });
+                gl.canvas = canvas;
+
+            } catch (e) {
+                alert("You are not webgl compatible :(");
+                return false;
+            }
+
+
+            const gui = myGUI();
+            console.log(gui.source_directionX);
+
+            let MouseContr = new MouseController(gl);
+
+            // SHADOW shaderProgram --------------------------------------------------------------//
+            let shaderProgramShadow = await createPromiseShaderProgram(gl, 'resource/vertex_shader_shadow.glsl', 'resource/fragment_shader_shadow.glsl');
+
+            let u_Pmatrix_shadow = gl.getUniformLocation(shaderProgramShadow, 'u_Pmatrix');
+            let u_Mmatrix_shadow = gl.getUniformLocation(shaderProgramShadow, 'u_Mmatrix');
+            let u_Vmatrix_shadow = gl.getUniformLocation(shaderProgramShadow, 'u_Vmatrix');
+
+            let a_Position_shadow = gl.getAttribLocation(shaderProgramShadow, 'a_Position');
+
+            //  MAIN shaderProgram ---------------------------------------------------------------//
+            let shaderProgram = await createPromiseShaderProgram(gl, 'resource/vertex_shader.glsl', 'resource/fragment_shader.glsl');
+
+            let u_Pmatrix = gl.getUniformLocation(shaderProgram, 'u_Pmatrix');
+            let u_Mmatrix = gl.getUniformLocation(shaderProgram, 'u_Mmatrix');
+            let u_Vmatrix = gl.getUniformLocation(shaderProgram, 'u_Vmatrix');
+            let u_Nmatrix = gl.getUniformLocation(shaderProgram, 'u_Nmatrix');
+            let u_source_direction = gl.getUniformLocation(shaderProgram, 'u_source_direction');
+            let u_view_direction = gl.getUniformLocation(shaderProgram, 'u_view_direction');
+            let u_shininess = gl.getUniformLocation(shaderProgram, 'u_shininess');
+            let u_Lmatrix = gl.getUniformLocation(shaderProgram, 'u_Lmatrix');
+            let u_PLmatrix = gl.getUniformLocation(shaderProgram, 'u_PLmatrix');
+            let u_LightPos = gl.getUniformLocation(shaderProgram, 'u_LightPos');
+
+            let a_Position = gl.getAttribLocation(shaderProgram, 'a_Position');
+            let a_uv = gl.getAttribLocation(shaderProgram, 'a_uv');
+            let a_normal = gl.getAttribLocation(shaderProgram, 'a_normal');
+            let a_tangent = gl.getAttribLocation(shaderProgram, 'a_tangent');
+            let a_bitangent = gl.getAttribLocation(shaderProgram, 'a_bitangent');
+
+            let u_sampler = gl.getUniformLocation(shaderProgram, 'samplerTex');
+            let u_samplerShadowMap = gl.getUniformLocation(shaderProgram, 'samplerShadowMap');
+            let u_samplerNormalMap = gl.getUniformLocation(shaderProgram, 'samplerNormalMap');
+            let u_samplerSpecularMap = gl.getUniformLocation(shaderProgram, 'samplerSpecularMap');
+            let u_CameraShadow = gl.getUniformLocation(shaderProgram, 'u_CameraShadow');
+            let u_SoftShadowPFC = gl.getUniformLocation(shaderProgram, 'u_SoftShadowPFC');
+
+            gl.useProgram(shaderProgram);
+
+            gl.uniform1i(u_sampler, 0);
+            gl.uniform1i(u_samplerShadowMap, 1);
+            gl.uniform1i(u_samplerNormalMap, 2);
+            gl.uniform1i(u_samplerSpecularMap, 3);
+
+            loadJSON(gl, 'resource/model_normal_2.json');
+            // ------------------------ LOAD BUFFER MODEL -----------------------------------//
+            let ModelMain = loadBuffer(gl, gl.model.meshes[0]);
+            // ------------------------ LOAD BUFFER FLOOR -----------------------------------//
+            let ModelPlane = loadBuffer(gl, gl.model.meshes[2]);
+            let ModelBox = loadBuffer(gl, gl.model.meshes[1]);
+
+            //--------------------------- create TEXTURE ------------------------------------//
+            let tex = get_texture(gl, "resource/tex3/tex3_DIFFUSE.jpg");
+            let tex_normal = get_texture(gl, "resource/tex3/tex3_NORMAL.jpg");
+            // let tex_normal = get_texture(gl, "resource/tex/paper_NORMAL_2.jpg");
+            let tex_spec = get_texture(gl, "resource/tex3/tex3_SPECULAR.jpg");
+            // ------------------------ RENDER TO TEXTURE -----------------------------------//
+            let SHADOW_MAP_SIZE = 256;
+            let fb = gl.createFramebuffer();
+            gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+
+            let rb = gl.createRenderbuffer();
+            gl.bindRenderbuffer(gl.RENDERBUFFER, rb);
+            gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
+
+            let texture_shadow_map = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, texture_shadow_map);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture_shadow_map, 0);
+            gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rb);
+
+            gl.bindTexture(gl.TEXTURE_2D, null);
+            gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+            // -------------------------- create MATRIX -------------------------------------//
+            let PROJMATRIX = glMatrix.mat4.create();
+            glMatrix.mat4.identity(PROJMATRIX);
+            let fovy = 40 * Math.PI / 180;
+            glMatrix.mat4.perspective(PROJMATRIX, fovy, canvas.width / canvas.height, 1, 50);
+
+            //---- SHADOW_MAP_MATRIX -------//
+            let PROJMATRIX_SHADOW = glMatrix.mat4.create();
+            glMatrix.mat4.identity(PROJMATRIX_SHADOW);
+            glMatrix.mat4.ortho(PROJMATRIX_SHADOW, -5., 5., -5., 5., .1, 50.);
+            //-----------------------------//
+
+            let MODELMATRIX = glMatrix.mat4.create();
+            let MODELMATRIX_FLOOR = glMatrix.mat4.create();
+            let VIEWMATRIX = glMatrix.mat4.create();
+            let VIEWMATRIX_CAMERA = glMatrix.mat4.create();
+            let NORMALMATRIX = glMatrix.mat4.create();
+            let NORMALMATRIX_HELPER = glMatrix.mat4.create();
+
+            let VIEWMATRIX_SHADOW_MAP = glMatrix.mat4.create();
+
+            let CAMERA = new Camera(gl, "");
+
+            //---- NORMAL -----//
+            let shaderProgram_Normal = loadNormalShaders(gl);
+            //---- AXIS -------//
+            let shaderProgram_axis = loadAxisShaders(gl);
+
+            //----------------------------- RENDER -----------------------------------------------//
+            gl.enable(gl.DEPTH_TEST);
+            gl.depthFunc(gl.LEQUAL);
+            gl.clearDepth(1.0);
+
+            let Z = 0.;
+            let AMORTIZATION = 0.8;
+            let animate;
+            let x = 0.0;
+            animate = function (time) {
+
+                //-------------------------- translate  --------------------------------------------//
+                MouseContr.dX *= AMORTIZATION, MouseContr.dY *= AMORTIZATION;
+                MouseContr.theta += MouseContr.dX, MouseContr.phi += MouseContr.dY;
+
+                Z = Z + MouseContr.dZ; if (Z < 1.0) { Z = 1.0 };
+
+                //--------------------------- VIEWMATRIX -------------------------------------------//
+                glMatrix.mat4.identity(VIEWMATRIX);
+                glMatrix.mat4.lookAt(VIEWMATRIX, [gui.view_directionX, gui.view_directionY, gui.view_directionZ], [0.0, 1.0, 0.0], [0.0, 1.0, 0.0]);
+
+                // VIEWMATRIX = CAMERA.vMatrix;
+
+                //------------------------- SHADOW_MAP VIEWMATRIX ----------------------------------//
+                glMatrix.mat4.identity(VIEWMATRIX_SHADOW_MAP);
+                glMatrix.mat4.lookAt(VIEWMATRIX_SHADOW_MAP, [gui.source_directionX, gui.source_directionY, gui.source_directionZ], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0]);
+
+                //----------------- NORMALMATRIX_HELPER --------------------------------------------//
+                glMatrix.mat4.identity(NORMALMATRIX_HELPER);
+                glMatrix.mat4.scale(NORMALMATRIX_HELPER, NORMALMATRIX_HELPER, [1.0, Z, 1.0]);
+                glMatrix.mat4.invert(NORMALMATRIX_HELPER, NORMALMATRIX_HELPER);
+                glMatrix.mat4.transpose(NORMALMATRIX_HELPER, NORMALMATRIX_HELPER);
+
+                //----------------- MODELMATRIX  --------------------------------------------//
+                glMatrix.mat4.identity(MODELMATRIX);
+                let model_translate = glMatrix.vec3.create();
+                glMatrix.vec3.set(model_translate, gui.model_X, gui.model_Y, gui.model_Z);
+
+                x = x + 0.005;
+                glMatrix.mat4.translate(MODELMATRIX, MODELMATRIX, model_translate);
+                // glMatrix.mat4.rotateX(MODELMATRIX, MODELMATRIX, x);
+                // glMatrix.mat4.rotateY(MODELMATRIX, MODELMATRIX, MouseContr.theta);
+                glMatrix.mat4.rotateY(MODELMATRIX, MODELMATRIX, x);
+                glMatrix.mat4.scale(MODELMATRIX, MODELMATRIX, [1.0, Z, 1.0]);
+                //----------------- NORMALMATRIX_REAL --------------------------------------------//
+                glMatrix.mat4.invert(NORMALMATRIX, MODELMATRIX);
+                glMatrix.mat4.transpose(NORMALMATRIX, NORMALMATRIX);
+
+                //----------------- MODELMATRIX_FLOOR --------------------------------------------//
+                glMatrix.mat4.identity(MODELMATRIX_FLOOR);
+                //------------------------ RENDER THE SHADOW MAP ------------------------------------//
+                gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+                gl.useProgram(shaderProgramShadow);
+
+                gl.viewport(0.0, 0.0, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
+                gl.clearColor(1.0, 1.0, 1.0, 1.0);
+                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+                gl.uniformMatrix4fv(u_Pmatrix_shadow, false, PROJMATRIX_SHADOW);
+                gl.uniformMatrix4fv(u_Mmatrix_shadow, false, MODELMATRIX);
+                gl.uniformMatrix4fv(u_Vmatrix_shadow, false, VIEWMATRIX_SHADOW_MAP);
+
+                gl.enableVertexAttribArray(a_Position_shadow);
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, ModelMain.TRIANGLE_VERTEX);
+                gl.vertexAttribPointer(a_Position_shadow, 3, gl.FLOAT, false, 4 * (3), 0);
+
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ModelMain.TRIANGLE_FACES);
+                gl.drawElements(gl.TRIANGLES, ModelMain.ModelIndiceslength, gl.UNSIGNED_SHORT, 0);
+
+
+
+                ///////////////////////// FLOOR ////////////////////////////////////////////
+
+                glMatrix.mat4.identity(MODELMATRIX_FLOOR);
+                gl.uniformMatrix4fv(u_Mmatrix_shadow, false, MODELMATRIX_FLOOR);
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, ModelPlane.TRIANGLE_VERTEX);
+                gl.vertexAttribPointer(a_Position_shadow, 3, gl.FLOAT, false, 4 * (3), 0);
+
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ModelPlane.TRIANGLE_FACES);
+                gl.drawElements(gl.TRIANGLES, ModelPlane.ModelIndiceslength, gl.UNSIGNED_SHORT, 0);
+
+                gl.disableVertexAttribArray(a_Position_shadow);
+                gl.flush();
+                gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+                //-------------------------------MAIN RENDER -------------------------------------------//
+                gl.viewport(0.0, 0.0, canvas.width, canvas.height);
+                gl.clearColor(0.1, 0.1, 0.1, 1.0);
+                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+                //--------------------------------------------------------------------------------------//
+                gl.useProgram(shaderProgram);
+                gl.enableVertexAttribArray(a_Position);
+                gl.enableVertexAttribArray(a_uv);
+                gl.enableVertexAttribArray(a_normal);
+                gl.enableVertexAttribArray(a_tangent);
+                gl.enableVertexAttribArray(a_bitangent);
+
+                if (gui.CameraShadow == true) {
+                    gl.uniformMatrix4fv(u_Pmatrix, false, PROJMATRIX_SHADOW);
+                    gl.uniformMatrix4fv(u_Mmatrix, false, MODELMATRIX);
+                    gl.uniformMatrix4fv(u_Vmatrix, false, VIEWMATRIX_SHADOW_MAP);
+
+                } else {
+                    gl.uniformMatrix4fv(u_Pmatrix, false, PROJMATRIX);
+                    gl.uniformMatrix4fv(u_Mmatrix, false, MODELMATRIX);
+                    gl.uniformMatrix4fv(u_Vmatrix, false, VIEWMATRIX);
+                }
+
+                gl.uniformMatrix4fv(u_Nmatrix, false, NORMALMATRIX);
+                gl.uniformMatrix4fv(u_Lmatrix, false, VIEWMATRIX_SHADOW_MAP);
+                gl.uniformMatrix4fv(u_PLmatrix, false, PROJMATRIX_SHADOW);
+
+                let bool_CameraShadow = (gui.CameraShadow == true) ? 1.0 : 0.0;
+                gl.uniform1f(u_CameraShadow, bool_CameraShadow);
+
+                let bool_u_SoftShadowPFC = (gui.PCF == true) ? 1.0 : 0.0;
+                gl.uniform1f(u_SoftShadowPFC, bool_u_SoftShadowPFC);
+                //-------------------------- Lighting ----------------------------------------------
+                let source_direction = glMatrix.vec3.create();
+                glMatrix.vec3.set(source_direction, gui.source_directionX, gui.source_directionY, gui.source_directionZ);
+
+                gl.uniform3fv(u_source_direction, source_direction);
+                gl.uniform1f(u_shininess, gui.shininess);
+
+                glMatrix.mat4.identity(VIEWMATRIX_CAMERA);
+                let view_direction = glMatrix.vec3.create();
+                glMatrix.vec3.set(view_direction, gui.view_directionX, gui.view_directionY, gui.view_directionZ);
+                glMatrix.vec3.transformMat4(view_direction, view_direction, VIEWMATRIX_CAMERA);
+                gl.uniform3fv(u_view_direction, view_direction);
+
+                if (tex.webGLtexture) {
+
+                    gl.activeTexture(gl.TEXTURE0);
+                    gl.bindTexture(gl.TEXTURE_2D, tex.webGLtexture);
+
+                    gl.activeTexture(gl.TEXTURE1);
+                    gl.bindTexture(gl.TEXTURE_2D, texture_shadow_map);
+
+                }
+
+                if (tex_normal.webGLtexture) {
+                    gl.activeTexture(gl.TEXTURE2);
+                    gl.bindTexture(gl.TEXTURE_2D, tex_normal.webGLtexture);
+                }
+
+                if (tex_spec.webGLtexture) {
+                    gl.activeTexture(gl.TEXTURE3);
+                    gl.bindTexture(gl.TEXTURE_2D, tex_spec.webGLtexture);
+                }
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, ModelMain.TRIANGLE_VERTEX);
+                gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 4 * (3), 0);
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, ModelMain.TRIANGLE_NORMAL);
+                gl.vertexAttribPointer(a_normal, 3, gl.FLOAT, false, 4 * (3), 0);
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, ModelMain.TRIANGLE_TANGENT);
+                gl.vertexAttribPointer(a_tangent, 3, gl.FLOAT, false, 4 * (3), 0);
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, ModelMain.TRIANGLE_BITANGENT);
+                gl.vertexAttribPointer(a_bitangent, 3, gl.FLOAT, false, 4 * (3), 0);
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, ModelMain.TRIANGLE_UV);
+                gl.vertexAttribPointer(a_uv, 2, gl.FLOAT, false, 4 * (2), 0);
+
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ModelMain.TRIANGLE_FACES);
+                gl.drawElements(gl.TRIANGLES, ModelMain.ModelIndiceslength, gl.UNSIGNED_SHORT, 0);
+
+                gl.flush();
+
+                gl.disableVertexAttribArray(a_Position);
+                gl.disableVertexAttribArray(a_uv);
+                gl.disableVertexAttribArray(a_normal);
+                gl.disableVertexAttribArray(a_tangent);
+                gl.disableVertexAttribArray(a_bitangent);
+
+
+
+
+                //------------------------- PLANE ---------------------------------------------------------//
+                gl.enableVertexAttribArray(a_Position);
+                gl.enableVertexAttribArray(a_uv);
+                gl.enableVertexAttribArray(a_normal);
+                gl.enableVertexAttribArray(a_tangent);
+                gl.enableVertexAttribArray(a_bitangent);
+
+                glMatrix.mat4.identity(MODELMATRIX_FLOOR);
+
+                if (gui.CameraShadow == true) {
+                    gl.uniformMatrix4fv(u_Pmatrix, false, PROJMATRIX_SHADOW);
+                    gl.uniformMatrix4fv(u_Mmatrix, false, MODELMATRIX_FLOOR);
+                    gl.uniformMatrix4fv(u_Vmatrix, false, VIEWMATRIX_SHADOW_MAP);
+                } else {
+                    gl.uniformMatrix4fv(u_Pmatrix, false, PROJMATRIX);
+                    gl.uniformMatrix4fv(u_Mmatrix, false, MODELMATRIX_FLOOR);
+                    gl.uniformMatrix4fv(u_Vmatrix, false, VIEWMATRIX);
+                }
+
+                //----------------- NORMALMATRIX_REAL --------------------------------------------//
+                glMatrix.mat4.invert(NORMALMATRIX, MODELMATRIX_FLOOR);
+                glMatrix.mat4.transpose(NORMALMATRIX, NORMALMATRIX);
+
+                gl.uniformMatrix4fv(u_Nmatrix, false, NORMALMATRIX);
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, ModelPlane.TRIANGLE_VERTEX);
+                gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 4 * (3), 0);
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, ModelPlane.TRIANGLE_NORMAL);
+                gl.vertexAttribPointer(a_normal, 3, gl.FLOAT, false, 4 * (3), 0);
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, ModelPlane.TRIANGLE_TANGENT);
+                gl.vertexAttribPointer(a_tangent, 3, gl.FLOAT, false, 4 * (3), 0);
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, ModelPlane.TRIANGLE_BITANGENT);
+                gl.vertexAttribPointer(a_bitangent, 3, gl.FLOAT, false, 4 * (3), 0);
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, ModelPlane.TRIANGLE_UV);
+                gl.vertexAttribPointer(a_uv, 2, gl.FLOAT, false, 4 * (2), 0);
+
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ModelPlane.TRIANGLE_FACES);
+                // gl.drawElements(gl.TRIANGLES, ModelPlane.ModelIndiceslength, gl.UNSIGNED_SHORT, 0);
+
+                gl.disableVertexAttribArray(a_Position);
+                gl.disableVertexAttribArray(a_uv);
+                gl.disableVertexAttribArray(a_normal);
+                gl.disableVertexAttribArray(a_tangent);
+                gl.disableVertexAttribArray(a_bitangent);
+                //------------------------- NORMAL HELPER ------------------------------------------------//
+                if (gui.normal) {
+                    VertexNormalHelper(gl, shaderProgram_Normal, PROJMATRIX, VIEWMATRIX, MODELMATRIX, NORMALMATRIX_HELPER);
+                };
+                //------------------------- AXIS ---------------------------------------------------------//
+                if (gui.axis) {
+                    loadAxisHelper(gl, shaderProgram_axis, PROJMATRIX, VIEWMATRIX, MODELMATRIX);
+                };
+                //------------------------- PLANE SHADOW_MAP TEST ----------------------------------------------------//
+                window.requestAnimationFrame(animate);
+            };
+            animate(0);
+        }
+    </script>
+</head>
+
+<body style='margin:10px' onload="webGLStart();">
+
+    <canvas id="canvasGL" style='position: absolute; background-color: black; -webkit-box-shadow: 5px 5px 10px 1px #0D0808;
+box-shadow: 5px 5px 10px 1px #0D0808; '></canvas>
+    <br /><br />
+
+
+
+</body>
+
+</html>
