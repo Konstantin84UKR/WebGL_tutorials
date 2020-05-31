@@ -12,6 +12,7 @@ uniform float u_normalPower;
 varying vec2 v_uv;
 varying vec3 v_LightDir;
 varying vec3 v_ViewDir;
+varying mat3 v_tbnMatrix;
 
 
 const vec3 source_diffuse_color  = vec3(1.0,1.0,1.0);
@@ -26,7 +27,7 @@ void main() {
     vec3 colorTex = vec3(texture2D(samplerTex, uv));
     vec3 colorSpecular = vec3(texture2D(samplerSpecularMap,uv));
     vec3 colorNormal = normalize(2.0 * vec3(texture2D(samplerNormalMap,uv)) - 1.0);
-
+    colorNormal = v_tbnMatrix * colorNormal;
     colorNormal = normalize(vec3(colorNormal.xy * u_normalPower,colorNormal.z * 1.0));
 
     vec3 L = normalize(v_LightDir);
