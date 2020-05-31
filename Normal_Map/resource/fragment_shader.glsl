@@ -27,9 +27,10 @@ void main() {
     vec3 colorTex = vec3(texture2D(samplerTex, uv));
     vec3 colorSpecular = vec3(texture2D(samplerSpecularMap,uv));
     vec3 colorNormal = normalize(2.0 * vec3(texture2D(samplerNormalMap,uv)) - 1.0);
-    colorNormal = v_tbnMatrix * colorNormal;
+    
     colorNormal = normalize(vec3(colorNormal.xy * u_normalPower,colorNormal.z * 1.0));
-
+    colorNormal = normalize(v_tbnMatrix * colorNormal);
+    
     vec3 L = normalize(v_LightDir);
     vec3 V = normalize(v_ViewDir);
     vec3 R = normalize(reflect(-L,colorNormal));
