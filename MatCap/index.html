@@ -59,7 +59,7 @@
             const gui = myGUI();
 
             // SHADER PROGRAM
-            let shaderProgram = await createPromiseShaderProgram(gl, 'resource/MapCapvs.glsl', 'resource/MapCapfs.glsl');
+            let shaderProgram = await createPromiseShaderProgram(gl, 'resource/vs.glsl', 'resource/fs.glsl');
 
 
             let u_Matrices = gl.getUniformBlockIndex(shaderProgram, "Matrices");
