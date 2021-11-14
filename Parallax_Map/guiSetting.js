@@ -14,7 +14,7 @@ function myGUI(gl) {
 
         view_directionX: 0.0,
         view_directionY: 2.0,
-        view_directionZ: -15.0,
+        view_directionZ: 15.0,
 
         shininess: 10.0,
         normal: false,
