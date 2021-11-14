@@ -156,7 +156,7 @@
                 glMatrix.mat4.translate(MODELMATRIX, MODELMATRIX, model_translate);
                 glMatrix.mat4.rotateX(MODELMATRIX, MODELMATRIX, MouseContr.phi);
                 glMatrix.mat4.rotateY(MODELMATRIX, MODELMATRIX, MouseContr.theta);
-                //glMatrix.mat4.rotateY(MODELMATRIX, MODELMATRIX, x);
+                glMatrix.mat4.rotateY(MODELMATRIX, MODELMATRIX, x);
                 glMatrix.mat4.scale(MODELMATRIX, MODELMATRIX, [3.0, 3.0, 3.0]);
                 glMatrix.mat4.scale(MODELMATRIX, MODELMATRIX, [1.0, Z, 1.0]);
                 //----------------- NORMALMATRIX_REAL ----------------------------------------------//
