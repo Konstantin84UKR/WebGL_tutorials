@@ -77,6 +77,10 @@ LoadModelJSON
 liveDemo:
 https://konstantin84ukr.github.io/WebGL_tutorials/LoadModel/LoadModelJSON.html
 
+Toon_Shader
+liveDemo:
+https://konstantin84ukr.github.io/WebGL_tutorials/Toon_Shader/Toon_shader.html
+
 MatCap
 liveDemo:
 https://konstantin84ukr.github.io/WebGL_tutorials/MatCap/
