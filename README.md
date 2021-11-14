@@ -1,6 +1,36 @@
 # WebGL_tutorials
 Project files for video course
 
+Video_1
+liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video_1.html
+
+Video_2
+liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video_2.html
+
+Video_3
+liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video_3.html
+
+Video_4
+liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video_4.html
+
+Video_7
+liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video_7.html
+
+Video_9
+liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video_9.html
+
+Video_9
+liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video_9.html
+
+Video_10
+liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video_10_Clock.html
+
+Video_11
+liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video_11_View_matrix.html
+
+Video_12
+liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video_12_LookAt_Matrix.html
+
 MatCap
 liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/MatCap/
 
@@ -34,32 +64,4 @@ liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/RoundedPoint/Rounded
 LoadModelJSON
 liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/LoadModel/LoadModelJSON.html
 
-Video_1
-liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video_1.html
 
-Video_2
-liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video_2.html
-
-Video_3
-liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video_3.html
-
-Video_4
-liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video_4.html
-
-Video_7
-liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video_7.html
-
-Video_9
-liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video_9.html
-
-Video_9
-liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video_9.html
-
-Video_10
-liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video_10.html
-
-Video_11
-liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video_11_View_matrix.html
-
-Video_12
-liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video_12_LookAt_Matrix.html
