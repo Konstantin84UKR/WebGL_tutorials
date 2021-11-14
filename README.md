@@ -19,9 +19,6 @@ liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video
 Video_9
 liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video_9.html
 
-Video_9
-liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video_9.html
-
 Video_10
 liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video_10_Clock.html
 
@@ -30,9 +27,6 @@ liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video
 
 Video_12
 liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video_12_LookAt_Matrix.html
-
-MatCap
-liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/MatCap/
 
 Normal
 liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Normal/Normal_GOOD.html
@@ -64,4 +58,6 @@ liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/RoundedPoint/Rounded
 LoadModelJSON
 liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/LoadModel/LoadModelJSON.html
 
+MatCap
+liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/MatCap/
 
