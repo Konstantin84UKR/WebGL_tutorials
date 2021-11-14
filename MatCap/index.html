@@ -59,7 +59,7 @@
             const gui = myGUI();
 
             // SHADER PROGRAM
-            let shaderProgram = await createPromiseShaderProgram(gl, '/resource/MapCap.vs', '/resource/MapCap.fs');
+            let shaderProgram = await createPromiseShaderProgram(gl, 'WebGL_tutorials/MatCap/resource/MapCap.vs', 'WebGL_tutorials/MatCap/resource/MapCap.fs');
 
 
             let u_Matrices = gl.getUniformBlockIndex(shaderProgram, "Matrices");
