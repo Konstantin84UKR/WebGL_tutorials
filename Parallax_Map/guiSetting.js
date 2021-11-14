@@ -14,12 +14,12 @@ function myGUI(gl) {
 
         view_directionX: 0.0,
         view_directionY: 2.0,
-        view_directionZ: 4.0,
+        view_directionZ: -15.0,
 
         shininess: 10.0,
         normal: false,
         axis: false,
-        diffuse: false,
+        diffuse: true,
         normalPower: 1.0,
         depthScale: 0.1,
     }
