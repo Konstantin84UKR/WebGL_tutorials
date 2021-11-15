@@ -65,6 +65,10 @@ Pick_object
 liveDemo:
 https://konstantin84ukr.github.io/WebGL_tutorials/pick_object
 
+Fog
+liveDemo:
+https://konstantin84ukr.github.io/WebGL_tutorials/Fog/index.html
+
 Snake_Game
 liveDemo:
 https://konstantin84ukr.github.io/WebGL_tutorials/Snake_Game
@@ -84,4 +88,7 @@ https://konstantin84ukr.github.io/WebGL_tutorials/Toon_Shader
 MatCap
 liveDemo:
 https://konstantin84ukr.github.io/WebGL_tutorials/MatCap/
+
+
+
 
