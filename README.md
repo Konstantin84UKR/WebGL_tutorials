@@ -39,47 +39,47 @@ https://konstantin84ukr.github.io/WebGL_tutorials/Lesson_1_to_12/Video_12_LookAt
 
 Normal
 liveDemo:
-https://konstantin84ukr.github.io/WebGL_tutorials/Normal/Normal_GOOD.html
+https://konstantin84ukr.github.io/WebGL_tutorials/Normal
 
 NormalMap
 liveDemo:
-https://konstantin84ukr.github.io/WebGL_tutorials/Normal_Map/Normal_Map_DEMO.html
+https://konstantin84ukr.github.io/WebGL_tutorials/Normal_Map
 
 Parallax_Map
 liveDemo:
-https://konstantin84ukr.github.io/WebGL_tutorials/Parallax_Map/Parallax_Map_DEMO.html
+https://konstantin84ukr.github.io/WebGL_tutorials/Parallax_Map
 
 Load_Shader
 liveDemo:
-https://konstantin84ukr.github.io/WebGL_tutorials/Load_Shader/index.html
+https://konstantin84ukr.github.io/WebGL_tutorials/Load_Shader
 
 ShadowMap
 liveDemo:
-https://konstantin84ukr.github.io/WebGL_tutorials/ShadowMap/ShadowMap_Final.html
+https://konstantin84ukr.github.io/WebGL_tutorials/ShadowMap
 
 ShadowMap_PCF
 liveDemo:
-https://konstantin84ukr.github.io/WebGL_tutorials/ShadowMap_PCF/ShadowMap_PCF.html
+https://konstantin84ukr.github.io/WebGL_tutorials/ShadowMap_PCF
 
 Pick_object
 liveDemo:
-https://konstantin84ukr.github.io/WebGL_tutorials/pick_object/Pick_object.html
+https://konstantin84ukr.github.io/WebGL_tutorials/pick_object
 
 Snake_Game
 liveDemo:
-https://konstantin84ukr.github.io/WebGL_tutorials/Snake_Game/Snake_Game_final_version.html
+https://konstantin84ukr.github.io/WebGL_tutorials/Snake_Game
 
 RoundedPoints
 liveDemo:
-https://konstantin84ukr.github.io/WebGL_tutorials/RoundedPoint/RoundedPoints.html
+https://konstantin84ukr.github.io/WebGL_tutorials/RoundedPoint
 
 LoadModelJSON
 liveDemo:
-https://konstantin84ukr.github.io/WebGL_tutorials/LoadModel/LoadModelJSON.html
+https://konstantin84ukr.github.io/WebGL_tutorials/LoadModel
 
 Toon_Shader
 liveDemo:
-https://konstantin84ukr.github.io/WebGL_tutorials/Toon_Shader/Toon_shader.html
+https://konstantin84ukr.github.io/WebGL_tutorials/Toon_Shader
 
 MatCap
 liveDemo:
