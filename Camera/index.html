@@ -306,6 +306,20 @@
                 gl.drawElements(gl.TRIANGLES, ModelIndices.length, gl.UNSIGNED_SHORT, 0);
 
 
+                glMatrix.mat4.translate(MODELMATRIX, MODELMATRIX, [0.0, 2.0, -10.0]);
+                gl.uniformMatrix4fv(u_Mmatrix, false, MODELMATRIX);
+                gl.drawElements(gl.TRIANGLES, ModelIndices.length, gl.UNSIGNED_SHORT, 0);
+
+
+                glMatrix.mat4.translate(MODELMATRIX, MODELMATRIX, [-10.0, 5.0, -3.0]);
+                gl.uniformMatrix4fv(u_Mmatrix, false, MODELMATRIX);
+                gl.drawElements(gl.TRIANGLES, ModelIndices.length, gl.UNSIGNED_SHORT, 0);
+
+
+                glMatrix.mat4.translate(MODELMATRIX, MODELMATRIX, [-10.0, 5.0, 30.0]);
+                gl.uniformMatrix4fv(u_Mmatrix, false, MODELMATRIX);
+                gl.drawElements(gl.TRIANGLES, ModelIndices.length, gl.UNSIGNED_SHORT, 0);
+
                 //------------------------- NORMAL HELPER-------------------------------------------------
                 if (gui.normal) {
                     VertexNormalHelper(gl, shaderProgram_Normal, PROJMATRIX, VIEWMATRIX, MODELMATRIX, NORMALMATRIX_HELPER);

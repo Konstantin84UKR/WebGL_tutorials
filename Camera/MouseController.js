@@ -97,10 +97,10 @@ class MouseController{
 
         }
 
-        this.canvas.addEventListener("mousedown", mouseDown , false);
-        this.canvas.addEventListener("mouseout" , mouseUp   , false);
-        this.canvas.addEventListener("mousemove", mouseMove , false);
-        this.canvas.addEventListener("mouseup"  , mouseUp   , false);
+        // this.canvas.addEventListener("mousedown", mouseDown , false);
+        // this.canvas.addEventListener("mouseout" , mouseUp   , false);
+        // this.canvas.addEventListener("mousemove", mouseMove , false);
+        // this.canvas.addEventListener("mouseup"  , mouseUp   , false);
         window.addEventListener("keydown", onkeydown   , false);
         window.addEventListener("keyup",  onkeyup   , false);
 
