@@ -61,6 +61,9 @@ ShadowMap_PCF
 liveDemo:
 https://konstantin84ukr.github.io/WebGL_tutorials/ShadowMap_PCF
 
+Camera FPS
+liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Camera/
+
 Pick_object
 liveDemo:
 https://konstantin84ukr.github.io/WebGL_tutorials/pick_object
