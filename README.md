@@ -88,6 +88,9 @@ Toon_Shader
 liveDemo:
 https://konstantin84ukr.github.io/WebGL_tutorials/Toon_Shader
 
+Stencil buffer:
+liveDemo: https://konstantin84ukr.github.io/WebGL_tutorials/Stensil_Buffer/
+
 MatCap
 liveDemo:
 https://konstantin84ukr.github.io/WebGL_tutorials/MatCap/
