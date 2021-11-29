@@ -1,0 +1,337 @@
+<html>
+<head>
+    <title> WebGL </title>
+    <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+    <script type="text/javascript" src="gl-matrix.js"></script>
+    <script type="text/javascript" src="ShaderUtil.js"></script>
+    <script type="text/javascript" src="MouseController.js"></script>
+    <script type="text/javascript" src="ModelUtil.js"></script>
+
+    <script id = "vertex_shader" type="x-shader/x-vertex">
+
+        attribute vec3 a_Position;
+        attribute vec2 a_uv;
+
+        uniform mat4 u_Pmatrix;
+        uniform mat4 u_Mmatrix;
+        uniform mat4 u_Vmatrix;
+
+        varying vec2 v_uv;
+
+        void main() {
+
+        v_uv = a_uv;
+        gl_Position = u_Pmatrix*u_Vmatrix*u_Mmatrix*vec4(a_Position,1.0);
+
+        }
+
+      </script>
+    <script id = "fragment_shader" type="x-shader/x-fragment">
+
+        precision mediump float;
+
+        uniform vec4 u_FragColor;
+        uniform sampler2D sampler;
+
+        varying vec2 v_uv;
+
+        void main() {
+
+        gl_FragColor =  texture2D(sampler,v_uv);
+
+        }
+
+    </script>
+
+    <script id = "vertex_shader_normal" type="x-shader/x-vertex">
+
+        attribute vec3 a_Position;
+        //attribute vec2 a_uv;
+
+        uniform mat4 u_Pmatrix;
+        uniform mat4 u_Mmatrix;
+        uniform mat4 u_Vmatrix;
+
+        //varying vec2 v_uv;
+
+        void main() {
+        gl_PointSize = 5.0;
+       // v_uv = a_uv;
+        gl_Position = u_Pmatrix*u_Vmatrix*u_Mmatrix*vec4(a_Position,1.0);
+
+        }
+
+    </script>
+
+    <script id = "fragment_shader_normal" type="x-shader/x-fragment">
+
+        precision mediump float;
+
+        void main() {
+
+        gl_FragColor = vec4(0.0,0.0,0.5,1.0);
+
+        }
+
+      </script>
+
+    <script type="text/javascript">
+
+        var gl;
+        var canvas;
+
+        function initGl() {
+
+            canvas = document.getElementById("canvasGL");
+            if (!canvas){
+                console.log('failed');
+                return;
+            }
+            canvas.width  = 300;
+            canvas.height = 300;
+
+            try {
+
+                gl = canvas.getContext("webgl", {antialias: false});
+
+            } catch (e) {
+                alert("You are not webgl compatible :(");
+                return false;
+            }
+
+            return gl;
+        }
+
+        function webGLStart() {
+
+            //var gl = initGl();
+
+
+            var canvas = document.getElementById("canvasGL");
+            if (!canvas){
+                console.log('failed');
+                return;
+            }
+            canvas.width  = 500;
+            canvas.height = 500;
+
+            var gl;
+            try {
+
+                gl = canvas.getContext("webgl", {antialias: true});
+                gl.canvas = canvas;
+
+            } catch (e) {
+                alert("You are not webgl compatible :(");
+                return false;
+            }
+
+
+            let MouseContr = new MouseController(gl);
+
+            // --------------------------------------------------------------
+            let shaderProgram  = createDomShaderProgram(gl,"vertex_shader","fragment_shader");
+
+            let  u_Pmatrix = gl.getUniformLocation(shaderProgram,'u_Pmatrix');
+            let  u_Mmatrix = gl.getUniformLocation(shaderProgram,'u_Mmatrix');
+            let  u_Vmatrix = gl.getUniformLocation(shaderProgram,'u_Vmatrix');
+
+            let  a_Position  = gl.getAttribLocation(shaderProgram,'a_Position');
+            let  a_uv        = gl.getAttribLocation(shaderProgram,'a_uv');
+            let  u_sampler   = gl.getUniformLocation(shaderProgram,'sampler');
+
+            gl.uniform1i(u_sampler, 0);
+
+            //gl.enableVertexAttribArray(a_Position);
+            //gl.enableVertexAttribArray(a_uv);
+
+            //--------------------------------------------------------------------
+            let shaderProgram_Normal  = createDomShaderProgram(gl,"vertex_shader_normal","fragment_shader_normal");
+
+            let  u_Pmatrix_normal = gl.getUniformLocation(shaderProgram_Normal,'u_Pmatrix');
+            let  u_Mmatrix_normal = gl.getUniformLocation(shaderProgram_Normal,'u_Mmatrix');
+            let  u_Vmatrix_normal = gl.getUniformLocation(shaderProgram_Normal,'u_Vmatrix');
+
+            let  a_Position_normal  = gl.getAttribLocation(shaderProgram_Normal,'a_Position');
+           // gl.enableVertexAttribArray(a_Position_normal);
+
+
+            // --- create TEXTURE -------------
+
+            let tex =  get_texture(gl,"yachik.jpg");
+
+            let  triangle_vertex = loadVertex();
+            let  triangle_face   = loadFace();
+
+            var model;
+            loadJSON(gl,'teapot.json');
+
+            let ModelVertices   =  gl.model.meshes[1].vertices;
+            let ModelIndices    =  [].concat.apply([], gl.model.meshes[1].faces);
+            let ModelTexCoords  =  gl.model.meshes[1].texturecoords[0];
+            let ModelNormal     =  gl.model.meshes[1].normals;
+
+            function normalHelper(gl,ModelIndices,ModelNormal) {
+
+                gl.newNormal = [];
+
+                for(let i = 0; i<= ModelIndices.length; i = i+3){
+
+                    var vectorVer = glMatrix.vec3.create();
+                    vectorVer[0] = ModelIndices[i];
+                    vectorVer[1] = ModelIndices[i+1];
+                    vectorVer[2] = ModelIndices[i+2];
+
+                    var vectorNormal = glMatrix.vec3.create();
+                    vectorNormal[0] = ModelNormal[i];
+                    vectorNormal[1] = ModelNormal[i+1];
+                    vectorNormal[2] = ModelNormal[i+2];
+
+                    glMatrix.vec3.scale(vectorNormal,vectorNormal, 0.2);
+
+                    glMatrix.vec3.add(vectorNormal,vectorNormal,vectorVer);
+
+                    let v = [].concat.apply([], vectorVer);
+                    let vn = [].concat.apply([], vectorNormal);
+
+                    gl.newNormal.push(v);
+                    gl.newNormal.push(vn);
+
+                }
+
+
+               // return  gl.newNormal;
+
+            }
+
+            normalHelper(gl,ModelVertices,ModelNormal);
+
+            let newNormal = [].concat.apply([], gl.newNormal);
+
+
+
+            let  TRIANGLE_VERTEX = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER,TRIANGLE_VERTEX);
+            gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(ModelVertices),gl.STATIC_DRAW);
+
+            let  TRIANGLE_UV = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER,TRIANGLE_UV);
+            gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(ModelTexCoords),gl.STATIC_DRAW);
+
+
+            let  TRIANGLE_FACES = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,TRIANGLE_FACES);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(ModelIndices),gl.STATIC_DRAW);
+
+            let  TRIANGLE_NORMAL = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER,TRIANGLE_NORMAL);
+            gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(newNormal),gl.STATIC_DRAW);
+
+
+
+            //--- create MATRIX ---------------
+
+            let  PROJMATRIX = glMatrix.mat4.create();
+            glMatrix.mat4.identity(PROJMATRIX);
+            let  fovy =  40 * Math.PI / 180;
+            glMatrix.mat4.perspective(PROJMATRIX,fovy,canvas.width/canvas.height,1,100);
+
+            let   MODELMATRIX = glMatrix.mat4.create();
+            let  VIEWMATRIX  = glMatrix.mat4.create();
+
+            glMatrix.mat4.identity(MODELMATRIX);
+            glMatrix.mat4.identity(VIEWMATRIX);
+            glMatrix.mat4.lookAt(VIEWMATRIX,[0.0, 0.0, 10.0],[0.0, 1.5, 0.0],[0.0, 1.0, 0.0]);
+
+            //-- RENDER -------------
+
+            gl.enable(gl.DEPTH_TEST);
+            gl.depthFunc(gl.LEQUAL);
+            gl.clearDepth(1.0);
+
+            let  Z = 0.;
+            let  AMORTIZATION=0.9;
+            let  animate;
+
+            animate = function (time) {
+
+                /////////////////////////////////
+                if (!MouseContr.drag) {
+                    MouseContr.dX *= AMORTIZATION, MouseContr.dY *= AMORTIZATION;
+                    MouseContr.theta += MouseContr.dX, MouseContr.phi += MouseContr.dY;
+                }
+
+                Z = Z + MouseContr.dZ;
+                /////////////////////////////////
+
+                glMatrix.mat4.identity(MODELMATRIX);
+                glMatrix.mat4.translate(MODELMATRIX,MODELMATRIX, [0.0, 0.0, Z * -0.1]);
+                glMatrix.mat4.rotateX(MODELMATRIX,MODELMATRIX , MouseContr.phi);
+                glMatrix.mat4.rotateY(MODELMATRIX,MODELMATRIX , MouseContr.theta);
+
+                glMatrix.mat4.scale(MODELMATRIX,MODELMATRIX ,[1.0,3.0,1.0]);
+
+                gl.clearColor(0.5, 0.5, 0.5, 1.0);
+                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+                //-----------------------------------------------------------------
+
+                gl.useProgram(shaderProgram);
+                gl.enableVertexAttribArray(a_Position);
+                gl.enableVertexAttribArray(a_uv);
+
+                gl.uniformMatrix4fv(u_Pmatrix, false, PROJMATRIX);
+                gl.uniformMatrix4fv(u_Mmatrix, false, MODELMATRIX);
+                gl.uniformMatrix4fv(u_Vmatrix, false, VIEWMATRIX);
+
+                if (tex.webGLtexture) {
+                    gl.activeTexture(gl.TEXTURE0);
+                    gl.bindTexture(gl.TEXTURE_2D, tex.webGLtexture);
+                }
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, TRIANGLE_VERTEX);
+                gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 4 * (3), 0);
+                gl.bindBuffer(gl.ARRAY_BUFFER, TRIANGLE_UV);
+                gl.vertexAttribPointer(a_uv, 2, gl.FLOAT, false, 4 * (2), 0);
+
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, TRIANGLE_FACES);
+                gl.drawElements(gl.TRIANGLES, ModelIndices.length, gl.UNSIGNED_SHORT, 0);
+
+                //-----------------------------------------------------------------------
+
+                gl.useProgram(shaderProgram_Normal);
+                gl.enableVertexAttribArray(a_Position_normal);
+
+                gl.uniformMatrix4fv(u_Pmatrix_normal, false, PROJMATRIX);
+                gl.uniformMatrix4fv(u_Mmatrix_normal, false, MODELMATRIX);
+                gl.uniformMatrix4fv(u_Vmatrix_normal, false, VIEWMATRIX);
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, TRIANGLE_NORMAL);
+                gl.vertexAttribPointer(a_Position_normal, 3, gl.FLOAT, false, 4 * (3), 0);
+               // gl.drawArrays(gl.POINTS, ModelNormal.length, gl.FLOAT, 0);
+                gl.bindBuffer(gl.ARRAY_BUFFER, TRIANGLE_NORMAL);
+                gl.drawArrays(gl.LINES, 0, newNormal.length/3);
+
+
+                gl.flush();
+
+                window.requestAnimationFrame(animate);
+            };
+            animate(0);
+
+        }
+
+
+    </script>
+</head>
+
+<body onload="webGLStart();">
+
+<canvas id="canvasGL" style="border: solid;" width="400" height="400"></canvas>
+<br/><br />
+
+
+
+</body>
+</html>
