@@ -86,9 +86,17 @@
 
       </script>
 
-    <script type="text/javascript">
+    <script id="fragment_shader_solid" type="x-shader/x-fragment">
+        precision highp float;
+        void main() {
+        gl_FragColor =  vec4(0.9,0.5,0.0,1.0);
+        }
+      </script>
 
+    <script type="text/javascript">
+        /** @type {WebGLRenderingContext} */
         var gl;
+        /** @type {HTMLCanvasElement} */
         var canvas;
 
         function webGLStart() {
@@ -104,7 +112,7 @@
             canvas.width = 800;//window.innerWidth;
             canvas.height = 600;//window.innerHeight;
 
-            var gl;
+            //var gl;
             try {
 
                 gl = canvas.getContext("webgl", { antialias: true });
@@ -124,6 +132,7 @@
             MouseContrOLD.activateCameraController();
             let MouseContr = MouseContrOLD.CaptureMouseEvent;
             let shaderProgram = createDomShaderProgram(gl, "vertex_shader", "fragment_shader");
+            let shaderProgram_solid = createDomShaderProgram(gl, "vertex_shader", "fragment_shader_solid");
 
             // --------------------------------------------------------------
 
@@ -265,8 +274,16 @@
                 glMatrix.mat4.transpose(NORMALMATRIX, NORMALMATRIX);
 
                 //----------------------------------------------------------------------------------
+                // gl.enable(DEPTH_TEST);
+                // gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
+
                 gl.clearColor(0.5, 0.5, 0.5, 1.0);
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+
+                // gl.stencilFunc(gl.ALWAYS, 1, 0xFF);
+                // gl.stencilMask(0xFF);
+
                 //----------------------------------------------------------------------------------
 
                 gl.useProgram(shaderProgram);

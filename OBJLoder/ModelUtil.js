@@ -116,6 +116,26 @@
        xhr.send();
    }
 
+   function loadFile(gl,modelURL) {
+    var xhr = new XMLHttpRequest();
+    var model;
+
+    xhr.open('GET', modelURL, false);
+    xhr.onload = function () {
+        if (xhr.status != 200) {
+
+            alert('LOAD' + xhr.status + ': ' + xhr.statusText);
+        } else {
+
+            gl.modelOBJ = xhr.responseText;
+           // model = JSON.parse(xhr.responseText);
+           // return true;
+        }
+    }
+    xhr.send();
+}
+
+
 
     // function normalHelper(gl,ModelIndices,ModelNormal) {
     //
