@@ -129,7 +129,9 @@
             loadJSON(gl, 'dragon.json');
             //let cubeModel = loadOBJ(gl, cubeData);
 
-            loadFile(gl, 'monkey.obj');
+            //loadFile(gl, 'monkey.obj');
+            //loadFile(gl, 'monkey.obj');
+            loadFile(gl, 'cube.obj');
 
             let modelData = loadOBJ(gl, gl.modelOBJ);
             let cubeModel = modelData;
@@ -139,13 +141,15 @@
             let ModelTexCoords = cubeModel.uv.flat();
             let ModelNormal = cubeModel.normals.flat();
 
+            let ModelBUFFER = cubeModel.BUFFER.flat();
+
             let TRIANGLE_VERTEX = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, TRIANGLE_VERTEX);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(ModelVertices), gl.STATIC_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(ModelBUFFER), gl.STATIC_DRAW);
 
-            let TRIANGLE_UV = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, TRIANGLE_UV);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(ModelTexCoords), gl.STATIC_DRAW);
+            // let TRIANGLE_UV = gl.createBuffer();
+            // gl.bindBuffer(gl.ARRAY_BUFFER, TRIANGLE_UV);
+            // gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(ModelTexCoords), gl.STATIC_DRAW);
 
 
             let TRIANGLE_FACES = gl.createBuffer();
@@ -208,13 +212,13 @@
                 }
 
                 gl.bindBuffer(gl.ARRAY_BUFFER, TRIANGLE_VERTEX);
-                gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 4 * (3), 0);
-                gl.bindBuffer(gl.ARRAY_BUFFER, TRIANGLE_UV);
-                gl.vertexAttribPointer(a_uv, 2, gl.FLOAT, false, 4 * (2), 0);
+                gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 4 * (3 + 2 ), 0);
+                gl.bindBuffer(gl.ARRAY_BUFFER, TRIANGLE_VERTEX);
+                gl.vertexAttribPointer(a_uv, 2, gl.FLOAT, false, 4 * (3 + 2 ), 3 * 4);
 
-                // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, TRIANGLE_FACES);
-                // gl.drawElements(gl.TRIANGLES, ModelIndices.length, gl.UNSIGNED_SHORT, 0);
-                gl.drawArrays(gl.TRIANGLES, 0, ModelIndices.length);
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, TRIANGLE_FACES);
+                gl.drawElements(gl.TRIANGLES, ModelIndices.length, gl.UNSIGNED_SHORT, 0);
+                //gl.drawArrays(gl.TRIANGLES, 0, ModelIndices.length);
                 //gl.drawArrays(gl.LINES, 0, ModelIndices.length);
 
                 gl.flush();
