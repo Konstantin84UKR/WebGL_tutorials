@@ -13,10 +13,8 @@ function myGUI() {
         source_directionY: 1.0,
         source_directionZ: 5.0,
 
-        view_directionX: 0.0,
-        view_directionY: 0.0,
-        view_directionZ: 10.0,
-
+        size: 1.03,
+        color: [ 255, 128, 0],
         shininess: 10.0,
 
         normal: false,
@@ -25,8 +23,7 @@ function myGUI() {
     }
 
     let gui = new dat.GUI();
-
-   // gui.add(settingGUI,'rotateX').min(-1.0).max(1.0).step(0.1);
+  
     var  source_direction = gui.addFolder('source direction');
     source_direction.add(settingGUI,'source_directionX').min(-5.0).max(5.0).step(0.1);
     source_direction.add(settingGUI,'source_directionY').min(-5.0).max(5.0).step(0.1);
@@ -42,11 +39,9 @@ function myGUI() {
 
     model.open();
 
-
-    var  view = gui.addFolder('view');
-    view.add(settingGUI,'view_directionX').min(-15.0).max(15.0).step(0.1);
-    view.add(settingGUI,'view_directionY').min(-15.0).max(15.0).step(0.1);
-    view.add(settingGUI,'view_directionZ').min(-15.0).max(15.0).step(0.1);
+    var  view = gui.addFolder('Stensil');
+    view.add(settingGUI,'size').min(1.01).max(1.1).step(0.01);  
+    view.addColor(settingGUI, 'color');
 
     view.open();
 

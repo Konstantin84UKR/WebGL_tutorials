@@ -2,6 +2,28 @@
 
 <head>
     <title> WebGL </title>
+    <style>
+        html,
+        body {
+            margin: 0px;
+            padding: 0px;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            background-color: #363636;
+        }
+
+        canvas {
+            background-color: rgb(0, 0, 0);
+            -webkit-box-shadow: 5px 5px 10px 1px #0D0808;
+            box-shadow: 5px 5px 10px 1px #0D0808;
+            display: block;
+            position: absolute;
+        }
+    </style>
     <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
 
     <script type="text/javascript" src="gl-matrix.js"></script>
@@ -88,29 +110,29 @@
 
     <script id="fragment_shader_solid" type="x-shader/x-fragment">
         precision highp float;
+        uniform vec3 u_color;
+
         void main() {
-        gl_FragColor =  vec4(0.9,0.4,0.2,1.0);
+        gl_FragColor =  vec4(u_color,1.0);
         }
       </script>
 
     <script type="text/javascript">
         /** @type {WebGLRenderingContext} */
-        var gl;
+        let gl;
         /** @type {HTMLCanvasElement} */
-        var canvas;
+        let canvas;
 
         function webGLStart() {
 
-            //var gl = initGl();
 
-
-            var canvas = document.getElementById("canvasGL");
+            canvas = document.getElementById("canvasGL");
             if (!canvas) {
                 console.log('failed');
                 return;
             }
-            canvas.width = 800;//window.innerWidth;
-            canvas.height = 600;//window.innerHeight;
+            canvas.width = 1800;//screen.width;
+            canvas.height = 900;//screen.height;
 
             //var gl;
             try {
@@ -149,6 +171,7 @@
                 CurrentShaderProgram.a_normal = gl.getAttribLocation(CurrentShaderProgram, 'a_normal');
 
                 CurrentShaderProgram.u_sampler = gl.getUniformLocation(CurrentShaderProgram, 'samplerTex');
+                CurrentShaderProgram.u_color = gl.getUniformLocation(CurrentShaderProgram, 'u_color');
 
                 gl.enableVertexAttribArray(CurrentShaderProgram.a_Position);
                 gl.enableVertexAttribArray(CurrentShaderProgram.a_uv);
@@ -201,7 +224,7 @@
             let PROJMATRIX = glMatrix.mat4.create();
             glMatrix.mat4.identity(PROJMATRIX);
             let fovy = 40 * Math.PI / 180;
-            glMatrix.mat4.perspective(PROJMATRIX, fovy, canvas.width / canvas.height, 1, 100);
+            glMatrix.mat4.perspective(PROJMATRIX, fovy, canvas.width / canvas.height, 1, 50);
 
 
             // let  PROJMATRIX = glMatrix.mat4.create();
@@ -227,7 +250,7 @@
 
             let camera = new Camera(gl, 1);
 
-            //     this.vMatrix = viewMatrix;
+            // this.vMatrix = viewMatrix;
             // this.pMatrix = projMatrix;
 
             // ---- DRAW ---- 
@@ -248,7 +271,7 @@
                 gl.uniform1f(CurrentShaderProgram.u_shininess, gui.shininess);
 
                 let view_direction = glMatrix.vec3.create();
-                glMatrix.vec3.set(view_direction, gui.view_directionX, gui.view_directionY, gui.view_directionZ);
+                // glMatrix.vec3.set(view_direction, gui.view_directionX, gui.view_directionY, gui.view_directionZ);
                 glMatrix.vec3.transformMat4(view_direction, view_direction, VIEWMATRIX_CAMERA);
                 gl.uniform3fv(CurrentShaderProgram.u_view_direction, view_direction);
 
@@ -270,21 +293,6 @@
                 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, TRIANGLE_FACES);
                 gl.drawElements(gl.TRIANGLES, ModelIndices.length, gl.UNSIGNED_SHORT, 0);
 
-
-                // glMatrix.mat4.translate(MODELMATRIX, MODELMATRIX, [0.0, 2.0, -10.0]);
-
-                // gl.uniformMatrix4fv(CurrentShaderProgram.u_Mmatrix, false, MODELMATRIX);
-                // gl.drawElements(gl.TRIANGLES, ModelIndices.length, gl.UNSIGNED_SHORT, 0);
-
-
-                // glMatrix.mat4.translate(MODELMATRIX, MODELMATRIX, [-10.0, 5.0, -3.0]);
-                // gl.uniformMatrix4fv(CurrentShaderProgram.u_Mmatrix, false, MODELMATRIX);
-                // gl.drawElements(gl.TRIANGLES, ModelIndices.length, gl.UNSIGNED_SHORT, 0);
-
-
-                // glMatrix.mat4.translate(MODELMATRIX, MODELMATRIX, [-10.0, 5.0, 30.0]);
-                // gl.uniformMatrix4fv(CurrentShaderProgram.u_Mmatrix, false, MODELMATRIX);
-                // gl.drawElements(gl.TRIANGLES, ModelIndices.length, gl.UNSIGNED_SHORT, 0);
             }
 
 
@@ -305,14 +313,6 @@
                 //Z = Z + MouseContr.dZ; if (Z < 1.0) { Z = 1.0 };
                 Z = Z + 0.01;
                 //----------------------------------------------------------------------------------
-                //glMatrix.mat4.identity(VIEWMATRIX);
-                //glMatrix.mat4.lookAt(VIEWMATRIX,[gui.view_directionX, gui.view_directionY, gui.view_directionZ],[0.0, 0.0, 0.0],[0.0, 1.0, 0.0]);
-                // glMatrix.mat4.rotateX(VIEWMATRIX,VIEWMATRIX , MouseContr.phi);
-                // glMatrix.mat4.rotateY(VIEWMATRIX,VIEWMATRIX , MouseContr.theta);
-
-                // glMatrix.mat4.identity(VIEWMATRIX_CAMERA);
-                //  glMatrix.mat4.rotateX(VIEWMATRIX_CAMERA,VIEWMATRIX_CAMERA , -MouseContr.phi);
-                //  glMatrix.mat4.rotateY(VIEWMATRIX_CAMERA,VIEWMATRIX_CAMERA , -MouseContr.theta);
                 //camera.lookAt();
                 VIEWMATRIX = camera.vMatrix;
                 PROJMATRIX = camera.pMatrix;
@@ -333,9 +333,7 @@
                 glMatrix.mat4.translate(MODELMATRIX, MODELMATRIX, model_translate);
                 glMatrix.mat4.rotateX(MODELMATRIX, MODELMATRIX, MouseContr.phi);
                 glMatrix.mat4.rotateY(MODELMATRIX, MODELMATRIX, Z);
-                //glMatrix.mat4.scale(MODELMATRIX, MODELMATRIX, [1.0, Z, 1.0]);
 
-                // glMatrix.mat4.multiply(TEST_MATRIX,MODELMATRIX,VIEWMATRIX);
                 glMatrix.mat4.invert(NORMALMATRIX, MODELMATRIX);
                 glMatrix.mat4.transpose(NORMALMATRIX, NORMALMATRIX);
 
@@ -343,7 +341,7 @@
                 gl.enable(gl.DEPTH_TEST);
 
 
-                gl.clearColor(0.5, 0.5, 0.5, 1.0);
+                gl.clearColor(0.1, 0.1, 0.1, 1.0);
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
 
                 gl.enable(gl.STENCIL_TEST);
@@ -361,7 +359,12 @@
 
                 gl.useProgram(shaderProgram_solid);
 
-                glMatrix.mat4.scale(MODELMATRIX, MODELMATRIX, [1.05, 1.05, 1.05]);
+                colorRGB = []
+                colorRGB[0] = gui.color[0] / 256;
+                colorRGB[1] = gui.color[1] / 256;
+                colorRGB[2] = gui.color[2] / 256;
+                gl.uniform3fv(shaderProgram_solid.u_color, colorRGB);
+                glMatrix.mat4.scale(MODELMATRIX, MODELMATRIX, [gui.size, gui.size, gui.size]);
                 drawModel(gl, shaderProgram_solid, true);
 
                 gl.stencilMask(0xFF);

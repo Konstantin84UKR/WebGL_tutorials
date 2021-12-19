@@ -18,7 +18,7 @@ class Camera{
         this.transformMatFront = glMatrix.mat4.create();
 
         this.eye	    = glMatrix.vec3.create();	//Traditional X,Y,Z 3d position
-        glMatrix.vec3.set( this.eye,0.0,0.0,20.0);
+        glMatrix.vec3.set( this.eye,0.0,0.0,8.0);
         this.front		= glMatrix.vec3.create();        	//How much to scale a mesh. Having a 1 means no scaling is done.
         glMatrix.vec3.set( this.front,0.0,0.0,-1.0);
         this.up	        = glMatrix.vec3.create();	//Hold rotation values based on degrees, Object will translate it to radians
@@ -87,6 +87,7 @@ class Camera{
                 break;
         }
         //glMatrix.vec3.negate(temp, this.front);
+        glMatrix.vec3.scale(temp,temp,0.1);
        glMatrix.vec3.add(this.eye,this.eye,temp);
        // glMatrix.mat4.translate(this.vMatrix,this.vMatrix,this.eye);
         this.lookAt();
