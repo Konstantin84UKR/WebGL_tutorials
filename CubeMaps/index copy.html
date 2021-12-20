@@ -1,0 +1,95 @@
+<html>
+
+<head>
+    <title> WebGL </title>
+    <style>
+        html,
+        body {
+            margin: 0px;
+            padding: 0px;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            background-color: #363636;
+        }
+
+        canvas {
+            background-color: rgb(0, 0, 0);
+            -webkit-box-shadow: 5px 5px 10px 1px #0D0808;
+            box-shadow: 5px 5px 10px 1px #0D0808;
+            display: block;
+            position: absolute;
+        }
+    </style>
+    <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+    <script type="text/javascript" src="gl-matrix.js"></script>
+    <script type="text/javascript" src="ShaderUtil.js"></script>
+    <script type="text/javascript" src="ModelUtil.js"></script>
+    <script type="text/javascript" src="dat.gui.js"></script>
+    <script type="text/javascript" src="guiSetting.js"></script>
+    <script type="text/javascript" src="VertexNormalsHelper.js"></script>
+    <script type="text/javascript" src="Axis.js"></script>
+
+    <script type="text/javascript">
+        "use script"
+        async function main() {
+            /** @type {HTMLCanvasElement} */
+            let canvas = document.createElement("canvas");
+             // Get A 2D context
+            /** @type {Canvas2DRenderingContext} */
+            let ctx = canvas.getContext('2d'); 
+            console.log(ctx);
+            canvas.width = 128;
+            canvas.heigth = 128;
+            
+            
+
+            const faceInfos = [
+                {faceColor: "#F00",textColor: '#FFF',text: '+X'},
+                {faceColor: "#FF0",textColor: '#FFF',text: '-X'},
+                {faceColor: "#0F0",textColor: '#FFF',text: '+Y'},
+                {faceColor: "#0FF",textColor: '#FFF',text: '-Y'},
+                {faceColor: "#00F",textColor: '#FFF',text: '+Z'},
+                {faceColor: "#F0F",textColor: '#FFF',text: '-Z'}
+            ]
+
+            faceInfos.forEach((faceInfos)=>{
+                const {faceColor,textColor,text} = faceInfos;
+                geberatorFace(ctx,faceColor,textColor,text);
+
+                ctx.canvas.toBlob((blob)=>{
+                    const img = new Image();
+                    img.src = URL.createObjectURL(blob);
+                    document.body.appendChild(img);
+                })
+            })
+
+            function geberatorFace(ctx,faceColor,textColor,text) {
+                const {width,heigth} = ctx.canvas;
+                ctx.fillStyle = faceColor;
+                ctx.fillRect(0,0,width,heigth);
+                ctx.font = `${width * 0.7}px sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = textColor;
+                ctx.fillText(text,width/2,heigth/2) 
+            }
+                      
+        }
+    </script>
+</head>
+
+<body style='margin:10px' onload="main();">
+
+    <!-- <canvas id="canvas"></canvas> -->
+    <br /><br />
+
+
+
+</body>
+
+</html>
