@@ -1,0 +1,273 @@
+<html>
+
+<head>
+    <title> WebGL </title>
+    <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+    <style>
+        html,
+        body {
+            margin: 5px;
+            padding: px;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            background-color: #363636;
+        }
+
+        canvas {
+            background-color: rgb(0, 0, 0);
+            -webkit-box-shadow: 5px 5px 10px 1px #0D0808;
+            box-shadow: 5px 5px 10px 1px #0D0808;
+            display: block;
+            position: absolute;
+        }
+    </style>
+    <script type="text/javascript" src="gl-matrix.js"></script>
+    <script type="text/javascript" src="ShaderUtil.js"></script>
+    <script type="text/javascript" src="MouseController.js"></script>
+    <script type="text/javascript" src="ModelUtil.js"></script>
+    <script type="text/javascript" src="cube.js"></script>
+    <script type="text/javascript" src="objLoader.js"></script>
+    <script type="text/javascript" src="AABB.js"></script>
+
+    <script id="vertex_shader" type="x-shader/x-vertex">
+
+        attribute vec3 a_Position;
+        attribute vec2 a_uv;
+
+        uniform mat4 u_Pmatrix;
+        uniform mat4 u_Mmatrix;
+        uniform mat4 u_Vmatrix;
+
+        varying vec2 v_uv;
+
+        void main() {
+
+        v_uv = a_uv;
+        gl_PointSize = 5.0;
+        gl_Position = u_Pmatrix*u_Vmatrix*u_Mmatrix*vec4(a_Position,1.0);
+
+        }
+
+      </script>
+    <script id="fragment_shader" type="x-shader/x-fragment">
+
+        precision mediump float;
+
+        uniform vec4 u_FragColor;
+        uniform sampler2D sampler;
+
+        varying vec2 v_uv;
+
+        void main() {
+
+        gl_FragColor =  texture2D(sampler,v_uv);
+
+        }
+
+      </script>
+
+
+    <script type="text/javascript">
+        /** @type {WebGLRenderingContext} */
+        var gl;
+        /** @type {HTMLCanvasElement} */
+        var canvas;
+
+
+        function webGLStart() {
+
+            //var gl = initGl();
+
+
+            canvas = document.getElementById("canvasGL");
+            if (!canvas) {
+                console.log('failed');
+                return;
+            }
+            canvas.width = 500;
+            canvas.height = 300;
+
+            gl;
+            try {
+
+                gl = canvas.getContext("webgl", { antialias: true });
+                gl.canvas = canvas;
+
+            } catch (e) {
+                alert("You are not webgl compatible :(");
+                return false;
+            }
+
+
+            let MouseContr = new MouseController(gl);
+            let shaderProgram = createDomShaderProgram(gl, "vertex_shader", "fragment_shader");
+            // let shaderProgram_AABB = createDomShaderProgram(gl, "vertex_shader_AABB", "fragment_shader_AABB");
+
+            // --------------------------------------------------------------
+            gl.useProgram(shaderProgram);
+            let u_Pmatrix = gl.getUniformLocation(shaderProgram, 'u_Pmatrix');
+            let u_Mmatrix = gl.getUniformLocation(shaderProgram, 'u_Mmatrix');
+            let u_Vmatrix = gl.getUniformLocation(shaderProgram, 'u_Vmatrix');
+
+            let a_Position = gl.getAttribLocation(shaderProgram, 'a_Position');
+            let a_uv = gl.getAttribLocation(shaderProgram, 'a_uv');
+            let u_sampler = gl.getUniformLocation(shaderProgram, 'sampler');
+
+            gl.uniform1i(u_sampler, 0);
+
+            gl.enableVertexAttribArray(a_Position);
+            gl.enableVertexAttribArray(a_uv);
+            gl.useProgram(null);
+
+            // gl.useProgram(shaderProgram_AABB);
+            // let u_Pmatrix_AABB = gl.getUniformLocation(shaderProgram_AABB, 'u_Pmatrix');
+            // let u_Mmatrix_AABB = gl.getUniformLocation(shaderProgram_AABB, 'u_Mmatrix');
+            // let u_Vmatrix_AABB = gl.getUniformLocation(shaderProgram_AABB, 'u_Vmatrix');
+
+            // let a_Position_AABB = gl.getAttribLocation(shaderProgram_AABB, 'a_Position');
+            // gl.useProgram(null);
+
+
+
+            // --- create TEXTURE -------------
+
+            let tex = get_texture(gl, "uv.jpg");
+
+
+            // let triangle_vertex = loadVertex();
+            // let triangle_face = loadFace();
+
+            loadJSON(gl, 'teapot.json');//model
+            //loadJSON(gl, 'model.json');//model
+            //let cubeModel = loadOBJ(gl,cubeData);
+            let cubeModel = gl.model.meshes[1];
+
+            //loadFile(gl, 'monkey.obj');
+            //loadFile(gl, 'd1.obj');
+            //loadFile(gl, 'cube.obj');
+
+            // let modelData = loadOBJ(gl, gl.modelOBJ);
+            // let cubeModel = modelData;
+
+            // let ModelVertices = cubeModel.vertex.flat();
+            // let ModelIndices = cubeModel.face;
+            // let ModelTexCoords = cubeModel.uv.flat();
+            // let ModelNormal = cubeModel.normals.flat();
+
+            let ModelVertices = cubeModel.vertices;
+            let ModelIndices = cubeModel.faces.flat();
+            let ModelTexCoords = cubeModel.texturecoords[0];
+            let ModelNormal = cubeModel.normals;
+
+            let AABB_shaderStruct = AABB_init_Shader(gl);
+            let AABB_Vertices_Struct = AABB_init_Vertex(ModelVertices, ModelIndices);
+            let AABB_VERTEX = AABB_init_buffer(gl, AABB_Vertices_Struct.AABB_Vertices);
+            //------------
+
+            let TRIANGLE_VERTEX = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, TRIANGLE_VERTEX);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(ModelVertices), gl.STATIC_DRAW);
+
+            let TRIANGLE_UV = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, TRIANGLE_UV);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(ModelTexCoords), gl.STATIC_DRAW);
+
+
+            let TRIANGLE_FACES = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, TRIANGLE_FACES);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(ModelIndices), gl.STATIC_DRAW);
+
+            //--- create MATRIX ---------------
+
+            let PROJMATRIX = glMatrix.mat4.create();
+            glMatrix.mat4.identity(PROJMATRIX);
+            let fovy = 40 * Math.PI / 180;
+            glMatrix.mat4.perspective(PROJMATRIX, fovy, canvas.width / canvas.height, 1, AABB_Vertices_Struct.min_z * 2.0);
+
+            let MODELMATRIX = glMatrix.mat4.create();
+            let VIEWMATRIX = glMatrix.mat4.create();
+
+            glMatrix.mat4.identity(MODELMATRIX);
+            glMatrix.mat4.identity(VIEWMATRIX);
+            glMatrix.mat4.lookAt(VIEWMATRIX, [0.0, (AABB_Vertices_Struct.max_y - AABB_Vertices_Struct.min_y) * 2, AABB_Vertices_Struct.max_z * 5.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0]);
+
+            //-- RENDER -------------
+
+            gl.enable(gl.DEPTH_TEST);
+            gl.depthFunc(gl.LEQUAL);
+            gl.clearDepth(1.0);
+
+            let Z = 0.;
+            let AMORTIZATION = 0.9;
+            let animate;
+
+            animate = function (time) {
+                gl.useProgram(shaderProgram);
+                //---------- translate  --------------------------------------------//
+                MouseContr.dX *= AMORTIZATION, MouseContr.dY *= AMORTIZATION;
+                MouseContr.theta += MouseContr.dX, MouseContr.phi += MouseContr.dY;
+
+                // console.log("MouseContr.dX = " + MouseContr.dX);
+                // console.log("MouseContr.theta = " + MouseContr.theta);
+
+                Z = Z + MouseContr.dZ;
+                //------------------------------------------------------------------//
+
+                glMatrix.mat4.identity(MODELMATRIX);
+                glMatrix.mat4.translate(MODELMATRIX, MODELMATRIX, [0.0, 0.0, Z * -0.1]);
+                glMatrix.mat4.rotateX(MODELMATRIX, MODELMATRIX, MouseContr.phi);
+                glMatrix.mat4.rotateY(MODELMATRIX, MODELMATRIX, MouseContr.theta);
+
+                gl.clearColor(0.5, 0.5, 0.5, 1.0);
+                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+                gl.uniformMatrix4fv(u_Pmatrix, false, PROJMATRIX);
+                gl.uniformMatrix4fv(u_Mmatrix, false, MODELMATRIX);
+                gl.uniformMatrix4fv(u_Vmatrix, false, VIEWMATRIX);
+
+                if (tex.webGLtexture) {
+                    gl.activeTexture(gl.TEXTURE0);
+                    gl.bindTexture(gl.TEXTURE_2D, tex.webGLtexture);
+                }
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, TRIANGLE_VERTEX);
+                gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 4 * (3), 0);
+                gl.bindBuffer(gl.ARRAY_BUFFER, TRIANGLE_UV);
+                gl.vertexAttribPointer(a_uv, 2, gl.FLOAT, false, 4 * (2), 0);
+
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, TRIANGLE_FACES);
+                gl.drawElements(gl.TRIANGLES, ModelIndices.length, gl.UNSIGNED_SHORT, 0);
+                // gl.drawArrays(gl.TRIANGLES, 0, ModelVertices.length);
+                //gl.drawArrays(gl.POINTS, 0, 36);
+                // gl.drawArrays(gl.POINTS, 0, 36);
+                // gl.drawArrays(gl.LINES, 0, 36);
+
+                //----AABB_render
+                AABB_render(gl, AABB_shaderStruct, AABB_VERTEX, AABB_Vertices_Struct.AABB_Vertices, PROJMATRIX, MODELMATRIX, VIEWMATRIX);
+
+                gl.flush();
+
+                window.requestAnimationFrame(animate);
+            };
+            animate(0);
+
+        }
+
+
+    </script>
+</head>
+
+<body onload="webGLStart();">
+
+    <canvas id="canvasGL" style="border: solid;" width="400" height="400"></canvas>
+    <br /><br />
+
+
+
+</body>
+
+</html>
