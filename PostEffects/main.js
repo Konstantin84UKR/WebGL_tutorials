@@ -107,12 +107,12 @@ async function main() {
 
   const mainModel = model.mesh.meshes[0];
 
-  let texture = await LOADERS.get_texture(gl, "../resource/uv.jpg");
+  let texture = await LOADERS.get_texture(gl, "resource/uv.jpg");
   gl.useProgram(shaderProgram);
   gl.uniform1i(u_texture, 0);
   gl.useProgram(null);
 
-  let textureFULLSCREEN = await LOADERS.get_texture(gl, "../resource/Kyiv.jpg");
+  let textureFULLSCREEN = await LOADERS.get_texture(gl, "resource/Kyiv.jpg");
   gl.useProgram(FULLSCREEN_Plane.shaderProgram);
   gl.uniform1i(FULLSCREEN_Plane_u_texture, 1);
   gl.useProgram(null);
