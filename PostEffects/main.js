@@ -97,7 +97,7 @@ async function main() {
    */
 
   let model = {
-    url: "../resource/model.json",
+    url: "resource/model.json",
     mesh: undefined,
   };
 
