@@ -1,0 +1,82 @@
+#File written by LIBRIZOMUV. Compilation :Dec 13 2019,23:12:04
+mtllib 
+#begin vertices
+v 12.7435 -50.4682 56.7603
+v -53.9822 -50.4682 35.0798
+v -53.9822 -50.4682 -35.0798
+v 12.7435 -50.4682 -56.7603
+v 53.9822 -50.4682 0
+v 12.7435 50.4682 -56.7603
+v 53.9822 50.4682 0
+v -53.9822 50.4682 -35.0798
+v -53.9822 50.4682 35.0798
+v 12.7435 50.4682 56.7603
+#end vertices
+
+#begin 30 textures vertices 
+vt 0.2312575 0.3920693 0
+vt 0.001953125 0.3175637 0
+vt 0.001953125 0.07645866 0
+vt 0.756942 0.6991769 0
+vt 0.3729753 0.1970112 0
+vt 0.608752 0.3920693 0
+vt 0.9980469 0.3488234 0
+vt 0.243058 0.742418 0
+vt 0.5006426 0.7097587 0
+vt 0.7493447 0.742418 0
+vt 0.3794476 0.07645866 0
+vt 0.756942 0.001953125 0
+vt 0.5082398 0.3955477 0
+vt 0.2595376 0.3628885 0
+vt 0.001953125 0.3955477 0
+vt 0.001953125 0.742418 0
+vt 0.3794476 0.3175637 0
+vt 0.756942 0.3523066 0
+vt 0.7504697 0.1970112 0
+vt 0.608752 0.001953125 0
+vt 0.7493447 0.3955477 0
+vt 0.756942 0.3488234 0
+vt 0.5006426 0.3628885 0
+vt 0.5082398 0.742418 0
+vt 0.9980469 0.3523066 0
+vt 0.9980469 0.001953125 0
+vt 0.2312575 0.001953125 0
+vt 0.9980469 0.6991769 0
+vt 0.243058 0.3955477 0
+vt 0.2595376 0.7097587 0
+#end 30 textures vertices 
+
+#begin 10 normals 
+vn 0.2483 -0.5957 0.7638
+vn -0.6498 -0.5957 0.472
+vn -0.6498 -0.5957 -0.472
+vn 0.2483 -0.5957 -0.7638
+vn 0.8032 -0.5957 -0
+vn 0.2483 0.5957 -0.7638
+vn 0.8032 0.5957 -0
+vn -0.6498 0.5957 -0.472
+vn -0.6498 0.5957 0.472
+vn 0.2483 0.5957 0.7638
+#end 10 normals 
+
+#begin 7 faces
+o Cylinder001
+g Cylinder001
+f 1/1/1 2/2/2 3/3/3 4/27/4 5/5/5 
+f 5/28/5 4/4/4 6/18/6 7/25/7 
+f 4/15/4 3/29/3 8/8/8 6/16/6 
+f 3/14/3 2/23/2 9/9/9 8/30/8 
+f 2/13/2 1/21/1 10/10/10 9/24/9 
+f 1/12/1 5/26/5 7/7/7 10/22/10 
+f 10/20/10 7/19/7 6/6/6 8/17/8 9/11/9 
+#end 7 faces
+
+#begin properties
+#ZOMPROPERTIES_02 table {Mesh table {SymPlane table {Point vector3d 0 0 0 Normal vector3d 1 0 0 Threshold double 0.01 Enabled bool false EdgeID int -1 SymEdgeID int -1 UPos double 0.5 LocalMode bool false } RootGroup CSubMeshGroup {Children table {Tile_0_0 CSubMeshGroup {Children table {} BBoxUV box3d 0 0 0 0 0 0 BBox3D box3d 0 0 0 0 0 0 AreaUV double 0.6181889 Area3D double 0 IsRoot bool false TopoStable table {Selected bool false Box box3d 0 1 0 1 0 1 U int 0 V int 0 NU int 0 NV int 0 Tiling vector3d 1 1 1 TileRatioMode string "1:1" } IsTile bool true PolyIDs ints { 0 6 1 2 3 4 5 } } } BBoxUV box3d 0 0 0 0 0 0 BBox3D box3d 0 0 0 0 0 0 AreaUV double 0 Area3D double 0 IsRoot bool true TopoStable table {Selected bool false Box box3d 0 1 0 1 0 1 U int 0 V int 0 NU int 1 NV int 1 Tiling vector3d 1 1 1 TileRatioMode string "1:1" Pack table {Rotate table {Mode int 2 Min double 0 Max double 180 Step double 0 } SpacingSize double 0.00390625 MarginSize double 0.001953125 Resolution int 200 Scaling table {Mode int 0 } LayoutScalingMode int 2 MaxMutations int 1 } } IsTile bool false PolyIDs ints { } } Maps table {Density table {PrimType string "Polygon" Size int 1 DefaultValue double 1 ScaleType string "Log" Mergeode string "Average" MinValue double 0.1 MaxValue double 4 Data doubles { r 7 1 } } Pin table {PrimType string "Vertex" Size int 1 DefaultValue double 0 ScaleType string "Normalized" Mergeode string "Max" MinValue double 0 MaxValue double 1 Data doubles { r 30 0 } } Protect table {PrimType string "Vertex" Size int 1 DefaultValue double 0 ScaleType string "Normalized" Mergeode string "Average" MinValue double -1 MaxValue double 1 Data doubles { r 30 0 } } } } }
+#end properties
+
+#begin 0 fatal error vertex (that RizomUV cannot handle)
+#end 0 fatal error vertex (that RizomUV cannot handle)
+
+#begin 0 error vertex
+#end 0 error vertex

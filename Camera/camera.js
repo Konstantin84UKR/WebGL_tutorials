@@ -59,7 +59,8 @@ class Camera{
    }
 
     lookAt(){
-      glMatrix.vec3.add(this.look,this.front,this.eye);    
+      glMatrix.vec3.add(this.look,this.front,this.eye);   
+      //glMatrix.vec3.normalize(this.look,this.look); 
       glMatrix.mat4.lookAt(this.vMatrix,this.eye,this.look,this.up);  
     }
 
@@ -87,6 +88,10 @@ class Camera{
                 break;
         }
         //glMatrix.vec3.negate(temp, this.front);
+        const speedCamera = 0.3;
+        glMatrix.vec3.scale(temp, temp, speedCamera);
+
+
        glMatrix.vec3.add(this.eye,this.eye,temp);
        // glMatrix.mat4.translate(this.vMatrix,this.vMatrix,this.eye);
         this.lookAt();

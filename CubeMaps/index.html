@@ -1,218 +1,37 @@
 <html>
 
 <head>
-    <title> WebGL </title>
+    <title> Velosiped_3D WebGL 3D Engine</title>
     <style>
-        html,
-        body {
-            margin: 0px;
-            padding: 0px;
-            width: 100%;
-            height: 100%;
+        html {
             overflow: hidden;
         }
+        body{
+    background-color: gray;
+    margin: 1%;
+    padding:  1%;
 
-        body {
-            background-color: #363636;
-        }
+}
+html,
+body
+{
+    overflow: hidden;
+}
 
-        canvas {
-            background-color: rgb(0, 0, 0);
-            -webkit-box-shadow: 5px 5px 10px 1px #0D0808;
-            box-shadow: 5px 5px 10px 1px #0D0808;
-            display: block;
-            position: absolute;
-        }
+canvas{
+    position:  fixed;
+    top: 0;
+    left: 0;
+    outline:  none; 
+}
     </style>
     <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
-
-    <script type="text/javascript" src="gl-matrix.js"></script>
-    <script type="text/javascript" src="ShaderUtil.js"></script>
-    <script type="text/javascript" src="ModelUtil.js"></script>
-    <script type="text/javascript" src="dat.gui.js"></script>
-    <script type="text/javascript" src="guiSetting.js"></script>
-    <script type="text/javascript" src="VertexNormalsHelper.js"></script>
-    <script type="text/javascript" src="Axis.js"></script>
-
-    <script type="text/javascript">
-        async function webGLStart() {
-
-            const canvas = document.getElementById("canvasGL");
-            if (!canvas) {
-                console.log('failed');
-                return;
-            }
-            canvas.width = 1800;//screen.width;
-            canvas.height = 900;//screen.height;
-
-            let gl;
-            try {
-
-                gl = canvas.getContext("webgl2", { antialias: true });
-                gl.canvas = canvas;
-
-            } catch (e) {
-                alert("You are not webgl compatible :(");
-                return false;
-            }
-
-            const gui = myGUI();
-
-            // SHADER PROGRAM
-            let shaderProgram = await createPromiseShaderProgram(gl, 'resource/vs.glsl', 'resource/fs.glsl');
-
-
-            let u_Matrices = gl.getUniformBlockIndex(shaderProgram, "Matrices");
-            gl.uniformBlockBinding(shaderProgram, u_Matrices, 0);
-
-            let u_Vmatrix = gl.getUniformLocation(shaderProgram, 'u_Vmatrix');
-            let u_sampler = gl.getUniformLocation(shaderProgram, 'samplerTex');
-
-            gl.useProgram(shaderProgram);
-            gl.uniform1i(u_sampler, 0);
-
-            loadJSON(gl, 'resource/model.json');
-
-            // LOAD BUFFER MODEL 
-            let ModelMain = loadBuffer(gl, gl.model.meshes[0]);
-
-            // CREATE TEXTURE 
-            let texmapcap = [];
-            texmapcap.push();
-            texmapcap.push(get_texture(gl, "resource/mapcap/green.jpg"));
-            texmapcap.push(get_texture(gl, "resource/mapcap/clay.jpg"));
-            texmapcap.push(get_texture(gl, "resource/mapcap/grey.png"));
-            texmapcap.push(get_texture(gl, "resource/mapcap/redclay.png"));
-            texmapcap.push(get_texture(gl, "resource/mapcap/skin.jpg"));
-            texmapcap.push(get_texture(gl, "resource/mapcap/skin2.png"));
-            texmapcap.push(get_texture(gl, "resource/mapcap/crome.png"));
-
-            // CREATE MATRIX 
-
-            let PROJMATRIX = glMatrix.mat4.create();
-            glMatrix.mat4.identity(PROJMATRIX);
-            let fovy = 40 * Math.PI / 180;
-            glMatrix.mat4.perspective(PROJMATRIX, fovy, canvas.width / canvas.height, 1, 50);
-
-            let MODELMATRIX = glMatrix.mat4.create();
-            let MODELMATRIX_FLOOR = glMatrix.mat4.create();
-            let VIEWMATRIX = glMatrix.mat4.create();
-            let VIEWMATRIX_CAMERA = glMatrix.mat4.create();
-            let NORMALMATRIX = glMatrix.mat4.create();
-            let NORMALMATRIX_HELPER = glMatrix.mat4.create();
-
-            let VIEWMATRIX_SHADOW_MAP = glMatrix.mat4.create();
-
-            // NORMAL HELPER
-            let shaderProgram_Normal = loadNormalShaders(gl);
-            // AXIS HELPER
-            let shaderProgram_axis = loadAxisShaders(gl);
-
-            // RENDER 
-            gl.enable(gl.DEPTH_TEST);
-            gl.depthFunc(gl.LEQUAL);
-            gl.clearDepth(1.0);
-
-            let AMORTIZATION = 0.8;
-            let animate;
-            let rotateY = 0.0;
-
-            animate = function (time) {
-
-                // VIEWMATRIX 
-                glMatrix.mat4.identity(VIEWMATRIX);
-                glMatrix.mat4.lookAt(VIEWMATRIX, [gui.view_directionX, gui.view_directionY, gui.view_directionZ], [0.0, 1.0, 0.0], [0.0, 1.0, 0.0]);
-
-                // NORMALMATRIX_HELPER 
-                glMatrix.mat4.identity(NORMALMATRIX_HELPER);
-                glMatrix.mat4.scale(NORMALMATRIX_HELPER, NORMALMATRIX_HELPER, [1.0, 1.0, 1.0]);
-                glMatrix.mat4.invert(NORMALMATRIX_HELPER, NORMALMATRIX_HELPER);
-                glMatrix.mat4.transpose(NORMALMATRIX_HELPER, NORMALMATRIX_HELPER);
-
-                // MODELMATRIX 
-                glMatrix.mat4.identity(MODELMATRIX);
-                let model_translate = glMatrix.vec3.create();
-                glMatrix.vec3.set(model_translate, gui.model_X, gui.model_Y, gui.model_Z);
-
-                rotateY = rotateY + 0.005;
-                glMatrix.mat4.translate(MODELMATRIX, MODELMATRIX, model_translate);
-                glMatrix.mat4.rotateY(MODELMATRIX, MODELMATRIX, rotateY);
-                glMatrix.mat4.scale(MODELMATRIX, MODELMATRIX, [1.0, 1.0, 1.0]);
-
-                //  NORMALMATRIX_REAL 
-                glMatrix.mat4.invert(NORMALMATRIX, MODELMATRIX);
-                glMatrix.mat4.transpose(NORMALMATRIX, NORMALMATRIX);
-
-                // MAIN RENDER 
-                gl.viewport(0.0, 0.0, canvas.width, canvas.height);
-                gl.clearColor(0.1, 0.1, 0.1, 1.0);
-                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-                gl.useProgram(shaderProgram);
-                gl.enableVertexAttribArray(0);
-                gl.enableVertexAttribArray(1);
-                gl.enableVertexAttribArray(2);
-
-
-                let sceneUniformData = new Float32Array(16 * 4);
-                sceneUniformData.set(PROJMATRIX);
-                sceneUniformData.set(MODELMATRIX, 16);
-                sceneUniformData.set(VIEWMATRIX, 16 * 2);
-                sceneUniformData.set(NORMALMATRIX, 16 * 3);
-
-                let sceneUniformBuffer = gl.createBuffer();
-                let Matrices = gl.getUniformBlockIndex(shaderProgram, 'Matrices');
-                gl.bindBufferBase(gl.UNIFORM_BUFFER, Matrices, sceneUniformBuffer);
-                gl.bufferData(gl.UNIFORM_BUFFER, sceneUniformData, gl.STATIC_DRAW);
-
-                gl.uniformMatrix4fv(u_Vmatrix, false, VIEWMATRIX);
-
-                if (texmapcap[gui.MatCap].webGLtexture) {
-                    gl.activeTexture(gl.TEXTURE0);
-                    gl.bindTexture(gl.TEXTURE_2D, texmapcap[gui.MatCap].webGLtexture);
-                }
-
-                gl.bindBuffer(gl.ARRAY_BUFFER, ModelMain.TRIANGLE_VERTEX);
-                gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 4 * (3), 0);
-
-                gl.bindBuffer(gl.ARRAY_BUFFER, ModelMain.TRIANGLE_NORMAL);
-                gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 4 * (3), 0);
-
-                gl.bindBuffer(gl.ARRAY_BUFFER, ModelMain.TRIANGLE_UV);
-                gl.vertexAttribPointer(2, 2, gl.FLOAT, false, 4 * (2), 0);
-
-                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ModelMain.TRIANGLE_FACES);
-                gl.drawElements(gl.TRIANGLES, ModelMain.ModelIndiceslength, gl.UNSIGNED_SHORT, 0);
-
-                gl.flush();
-
-                gl.disableVertexAttribArray(0);
-                gl.disableVertexAttribArray(1);
-                gl.disableVertexAttribArray(2);
-
-                // NORMAL HELPER // legacy WEBGL 1.0 style
-                if (gui.normal) {
-                    VertexNormalHelper(gl, shaderProgram_Normal, PROJMATRIX, VIEWMATRIX, MODELMATRIX, NORMALMATRIX_HELPER);
-                };
-                // AXIS HELPER  // legacy WEBGL 1.0 style
-                if (gui.axis) {
-                    loadAxisHelper(gl, shaderProgram_axis, PROJMATRIX, VIEWMATRIX, MODELMATRIX);
-                };
-
-                window.requestAnimationFrame(animate);
-            };
-            animate(0);
-        }
-    </script>
 </head>
 
-<body style='margin:10px' onload="webGLStart();">
-
-    <canvas id="canvasGL"></canvas>
-    <br /><br />
-
-
-
+<body style='margin:10px'>
+    <div id=root>
+    </div>
+    <script src='./main.js' type='module'></script>
 </body>
 
 </html>

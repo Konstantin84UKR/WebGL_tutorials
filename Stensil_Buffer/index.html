@@ -197,6 +197,7 @@
 
 
             loadJSON(gl, 'resource/Model.json');
+            //loadJSON(gl, 'resource/teapot.json');
 
             let ModelVertices = gl.model.meshes[0].vertices;
             let ModelIndices = [].concat.apply([], gl.model.meshes[0].faces);
@@ -334,6 +335,7 @@
                 glMatrix.mat4.invert(NORMALMATRIX, MODELMATRIX);
                 glMatrix.mat4.transpose(NORMALMATRIX, NORMALMATRIX);
 
+
                 //----------------------------------------------------------------------------------
                 gl.enable(gl.DEPTH_TEST);
 
@@ -376,6 +378,8 @@
                 if (gui.axis) {
                     loadAxisHelper(gl, shaderProgram_axis, PROJMATRIX, VIEWMATRIX, MODELMATRIX);
                 }
+
+
 
 
                 //gl.flush();

@@ -265,8 +265,8 @@
                 let model_translate = glMatrix.vec3.create();
                 glMatrix.vec3.set(model_translate, gui.model_X, gui.model_Y, gui.model_Z);
                 glMatrix.mat4.translate(MODELMATRIX, MODELMATRIX, model_translate);
-                glMatrix.mat4.rotateX(MODELMATRIX, MODELMATRIX, MouseContr.phi);
-                glMatrix.mat4.rotateY(MODELMATRIX, MODELMATRIX, MouseContr.theta);
+                // glMatrix.mat4.rotateX(MODELMATRIX, MODELMATRIX, MouseContr.phi);
+                // glMatrix.mat4.rotateY(MODELMATRIX, MODELMATRIX, MouseContr.theta);
                 glMatrix.mat4.scale(MODELMATRIX, MODELMATRIX, [1.0, Z, 1.0]);
 
                 // glMatrix.mat4.multiply(TEST_MATRIX,MODELMATRIX,VIEWMATRIX);
