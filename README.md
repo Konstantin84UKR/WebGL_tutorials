@@ -96,7 +96,12 @@ liveDemo:
 https://konstantin84ukr.github.io/WebGL_tutorials/MatCap/
 
 PostEffect
+liveDemo:
 https://konstantin84ukr.github.io/WebGL_tutorials/PostEffects/
+
+CubeMap
+liveDemo:
+https://konstantin84ukr.github.io/WebGL_tutorials/CubeMap/
 
 
 
