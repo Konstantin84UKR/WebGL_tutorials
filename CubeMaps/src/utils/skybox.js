@@ -2,7 +2,7 @@
 function loadCubeMap(gl) {
     
 
-    let folder = 'resource/Cafe';
+    let folder = 'resource/test';
     let formalImage = 'png';
 
 
