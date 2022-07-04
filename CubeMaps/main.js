@@ -154,7 +154,7 @@ async function main() {
 
   const mainModel = model.mesh.meshes[0];
 
-  let texture = await LOADERS.get_texture(gl, "../resource/uv.jpg");
+  let texture = await LOADERS.get_texture(gl, "resource/uv.jpg");
   gl.useProgram(shaderProgram);
   gl.uniform1i(u_texture, 0);
   gl.useProgram(null);
