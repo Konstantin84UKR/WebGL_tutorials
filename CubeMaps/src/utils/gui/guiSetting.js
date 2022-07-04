@@ -32,7 +32,7 @@ export function myGUI(gl) {
        
         MatCap: 0,
 
-        useTextureColor : true,
+        useTextureColor : false,
         useReflectColor : false
     }
 
