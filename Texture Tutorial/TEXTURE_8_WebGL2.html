@@ -1,0 +1,268 @@
+<html>
+<head>
+    <title> WebGL </title>
+    <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+    <script type="text/javascript" src="gl-matrix.js"></script>
+    <script id = "vertex_shader" type="x-shader/x-vertex">
+        #version 300 es
+        
+        layout(location = 0) in vec4 aPosition;
+        layout(location = 1) in vec2 aTexCoord;
+        layout(location = 2) in float aDepth;
+
+        out vec2 vTexCoord;        
+        out float vDepth;
+
+        void main(){
+            vDepth = aDepth;
+            vTexCoord = aTexCoord;
+            gl_Position = aPosition;
+        }
+      </script>
+    <script id = "fragment_shader" type="x-shader/x-fragment">
+        #version 300 es
+
+        precision mediump float;
+
+        uniform mediump sampler2DArray uSampler;
+
+        in vec2 vTexCoord;
+        in float vDepth;
+       
+        out vec4 fragColor;
+
+        void main(){
+            fragColor = texture(uSampler,vec3(vTexCoord,vDepth));
+        }
+
+        </script>
+
+    <script type="text/javascript">
+
+        function getShader(gl, id, str){
+
+            var shader;
+            if(id == 'vs'){
+                shader = gl.createShader(gl.VERTEX_SHADER);
+
+            }else if(id=='fs'){
+                shader = gl.createShader(gl.FRAGMENT_SHADER);
+            }else {
+                return null;
+            }
+            gl.shaderSource(shader, str);
+            gl.compileShader(shader);
+
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                alert(gl.getShaderInfoLog(shader));
+                return null;
+            }
+
+            return shader;
+
+        }
+
+        function getProgram(gl,vShader,fShader) {
+
+            var shaderProgram = gl.createProgram();
+            gl.attachShader(shaderProgram,vShader);
+            gl.attachShader(shaderProgram,fShader);
+            gl.linkProgram(shaderProgram);
+            if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+                console.log(gl.getShaderInfoLog(vShader));
+                console.log(gl.getShaderInfoLog(fShader));
+            }
+            return shaderProgram;
+
+        }
+
+        function createDomShaderProgram(gl, vectId,fragId) {
+
+            var vShaderTxt = document.getElementById(vectId).text.trim();                      if(!vShaderTxt) return null;
+            var fShaderTxt = document.getElementById(fragId).text.trim();                      if(!fShaderTxt) return null;
+            var vShader = getShader(gl,'vs',vShaderTxt);                                if(!vShader)    return null;
+            var fShader = getShader(gl,'fs',fShaderTxt);                                if(!fShader)    return null;
+
+            if(!fShader) {gl.deleteShader(vShader);  return null;}
+
+            var shaderProgram = getProgram(gl,vShader,fShader);
+
+            return shaderProgram;
+        }
+
+        function initGl() {
+
+            canvas = document.getElementById("canvasGL");
+            if (!canvas){
+                console.log('failed');
+                return;
+            }
+            canvas.width  = 300;
+            canvas.height = 300;
+
+            try {
+
+                gl = canvas.getContext("webgl", {antialias: false});
+
+            } catch (e) {
+                alert("You are not webgl compatible :(");
+                return false;
+            }
+
+            return gl;
+        }
+
+        function webGLStart() {
+            /** @type {HTMLCanvasElement} */
+            const canvas = document.getElementById("canvasGL");
+            if (!canvas){
+                console.log('failed');
+                return;
+            }
+            canvas.width  = 500;
+            canvas.height = 500;
+
+            try {
+                /** @type {WebGLRenderingContext} */
+                gl = canvas.getContext("webgl2", {antialias: true});
+
+            } catch (e) {
+                alert("You are not webgl compatible :(");
+                return false;
+            }
+
+
+            let shaderProgram  = createDomShaderProgram(gl,"vertex_shader","fragment_shader");
+            gl.useProgram(shaderProgram);
+            let u_sampler   = gl.getUniformLocation(shaderProgram,'uSampler');
+            gl.uniform1i(u_sampler, 0);
+
+            const u_uvOffset = gl.getUniformLocation(shaderProgram, "uvOffset");
+            const uvScale = gl.getUniformLocation(shaderProgram, "uvScale");
+
+            ///** BufferData --------------------------------------------------------------
+            const vertexBufferData = new Float32Array([
+                -1.0, 1.0,
+                -1.0, -1.0,
+                1.0,  1.0,
+                1.0, -1.0,
+            ]);
+
+            const frame = 1;
+            const pading =  0.3287671232876712;
+            const texCoordBufferData = new Float32Array([
+                0 , 1,
+                0 , 0,
+                1 , 1,
+                1 , 0,
+            ]);
+
+            const frameUV = [
+                [0.0,0.6666],
+                [0.3333,0.6666],
+                [0.6666, 0.6666],
+                [0.0, 0.3333],
+                [0.3333, 0.3333],
+                [0.0, 0.0],
+                [0.3333, 0.0]
+            ];
+
+
+            const vertexBuffer  = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, vertexBufferData, gl.STATIC_DRAW);
+            gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0,0,);
+            gl.enableVertexAttribArray(0);
+
+            const texCoordBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, texCoordBufferData, gl.STATIC_DRAW);
+            gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 0, 0,);
+            gl.enableVertexAttribArray(1);
+
+            gl.vertexAttrib1f(2, 3);
+
+            //** create TEXTURE -----------------------------------------------------
+            const loadTexture = (i) => new Promise(resolve => {
+                const image = new Image();
+                image.addEventListener('load',()=> resolve(image));
+                image.src = `./cat/cat${i}.png`;
+            }); 
+            
+            
+            const run =  async ()=> {
+            
+                const textureSlot = 1;
+                // gl.activeTexture(gl.TEXTURE0 + textureSlot);
+                // gl.uniform1i(u_sampler,textureSlot);
+                                
+                const texture = gl.createTexture();
+                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
+                gl.bindTexture(gl.TEXTURE_2D_ARRAY,texture);
+
+                gl.texStorage3D(gl.TEXTURE_2D_ARRAY,1 ,gl.RGBA8,512,512,8);
+
+                for (let index = 0; index < 7; index++) {
+                    const image = await loadTexture(index);
+                    gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, index, 512, 512, 1, gl.RGBA, gl.UNSIGNED_BYTE, image);                 
+                }
+            
+                gl.texParameteri(gl.TEXTURE_2D_ARRAY,gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+                gl.texParameteri(gl.TEXTURE_2D_ARRAY,gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+              
+                // gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
+                // gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_BASE_LEVEL, 0);
+                // gl.bindTexture(gl.TEXTURE_2D,null);
+                
+                gl.clearColor(0.2, 0.2, 0.2, 1.0);
+                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+                
+                let time_prev = 0;
+                let frameindex = 0;
+                let time_frame = 0;
+                const animate = function (time) {
+                    const dt = time - time_prev;
+                    time_prev = time;
+
+                    const dt_time_frame = time - time_frame;
+                    if(dt_time_frame >= 100){
+                        if(frameindex == 6){
+                            frameindex = 0; 
+                        }else{
+                            frameindex++    
+                        }
+                    time_frame = time;
+                    }
+                
+                    gl.vertexAttrib1f(2, frameindex);
+                    gl.viewport(0, 0, canvas.width, canvas.height);
+                    gl.clearColor(0.2, 0.2, 0.2, 1.0);
+                    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+                    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+                
+                    gl.flush();
+
+                    window.requestAnimationFrame(animate);
+                };
+                animate(0);
+
+                };
+
+                run();
+            }
+
+
+    </script>
+</head>
+
+<body onload="webGLStart();">
+
+<canvas id="canvasGL" style="border: solid;" width="400" height="400"></canvas>
+<br/><br />
+
+
+
+</body>
+</html>
